@@ -40,7 +40,7 @@ class Imitation():
         return Imitation.generate_episode(self.model, env, render)
 
     @staticmethod
-    def generate_episode(env, render=False):
+    def generate_episode(self, env, render=False):
         # Generates an episode by running the given model on the given env.
         # Returns:
         # - a list of states, indexed by time step
