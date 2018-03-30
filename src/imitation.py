@@ -66,6 +66,9 @@ class Imitation():
         acc = 0
 
         # Prepare the input data and label
+        states, actions, rewards = generate_episode(env, render)
+        x_train = states
+        y_train = actions
 
         # Training the model
         history = self.model.fit(x_train, y_train, \
@@ -74,6 +77,7 @@ class Imitation():
                        verbose=1)
 
         # Get the loss and accuracy from history
+
 
         return loss, acc
 
