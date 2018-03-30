@@ -97,14 +97,12 @@ class Imitation():
 
         for i in range(num_episodes):
             states, actions, rewards = self.run_expert(env, render)
-            x_train.append(states)
-            y_train.append(actions)
+            x_train.extend(states)
+            y_train.extend(actions)
 
         x_train = np.array(x_train)
-        print np.shape(x_train)
-        x_train = np.reshape(x_train, [x_train.shape[1], x_train.shape[3]])
+        x_train = np.reshape(x_train, [x_train.shape[0], x_train.shape[2]])
         y_train = np.array(y_train)
-        y_train = np.reshape(y_train, [y_train.shape[1], y_train.shape[3]])
 
 
         # Training the model
