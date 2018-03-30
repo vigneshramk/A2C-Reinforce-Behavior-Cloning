@@ -5,6 +5,9 @@ import keras
 import random
 import gym
 
+from keras import metrics
+from tensorflow import set_random_seed
+
 
 class Imitation():
     def __init__(self, model_config_path, expert_weights_path):
@@ -19,6 +22,10 @@ class Imitation():
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternatively compile your model here.
+        self.optimizer = Adam(lr=0.003)
+        self.model.compile('categorical_crossentropy',\
+                           optimizer=self.optimizer,\
+                           metrics=[metric.categorical_crossentropy])
 
     def run_expert(self, env, render=False):
         # Generates an episode by running the expert policy on the given env.
@@ -88,6 +95,11 @@ def main(args):
     
     # Create the environment.
     env = gym.make('LunarLander-v2')
+
+    # Set the random seeds
+    env.seed(2018)
+    np.random.seed(2018)
+    set_random_seed(2018)
     
     # TODO: Train cloned models using imitation learning, and record their
     #       performance.
