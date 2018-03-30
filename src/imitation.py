@@ -9,6 +9,7 @@ from keras import metrics
 import tensorflow as tf
 from tensorflow import set_random_seed
 from logger import Logger
+from keras.optimizers import Adam
 
 from keras.utils.np_utils import to_categorical
 
@@ -27,9 +28,9 @@ class Imitation():
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternatively compile your model here.
         self.optimizer = Adam(lr=0.003)
-        self.model.compile('categorical_crossentropy',\
+        self.model.compile(loss='categorical_crossentropy',\
                            optimizer=self.optimizer,\
-                           metrics=[metric.categorical_crossentropy])
+                           metrics=[metrics.categorical_crossentropy])
 
         # Setting the batch size
         self.batch_size = 32
@@ -84,7 +85,7 @@ class Imitation():
         x_train = []
         y_train = []
         for i in range(num_episodes):
-            states, actions, rewards = run_expert(env, render)
+            states, actions, rewards = self.run_expert(env, render)
             x_train.append(states)
             y_train.append(actions)
 
