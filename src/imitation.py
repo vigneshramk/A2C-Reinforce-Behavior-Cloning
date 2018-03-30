@@ -28,6 +28,9 @@ class Imitation():
                            optimizer=self.optimizer,\
                            metrics=[metric.categorical_crossentropy])
 
+        # Setting the batch size
+        self.batch_size = 32
+
     def run_expert(self, env, render=False):
         # Generates an episode by running the expert policy on the given env.
         return Imitation.generate_episode(self.expert, env, render)
@@ -61,6 +64,17 @@ class Imitation():
         #       method run_expert() to generate training data.
         loss = 0
         acc = 0
+
+        # Prepare the input data and label
+
+        # Training the model
+        history = self.model.fit(x_train, y_train, \
+                       batch_size=self.batch_size, \
+                       epochs=num_epochs, \
+                       verbose=1)
+
+        # Get the loss and accuracy from history
+
         return loss, acc
 
 
