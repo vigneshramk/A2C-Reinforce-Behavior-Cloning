@@ -42,7 +42,7 @@ class Imitation():
         return Imitation.generate_episode(self.model, env, render)
 
     @staticmethod
-    def generate_episode(self, env, render=False):
+    def generate_episode(model, env, render=False):
         # Generates an episode by running the given model on the given env.
         # Returns:
         # - a list of states, indexed by time step
@@ -57,10 +57,11 @@ class Imitation():
         states.append(s)
         done = False
         while(done != True):
-            action = self.expert.predict(s)
+            action = model.predict(s)
             action_1hot = to_categorical(action, num_classes=4)
             actions.append(action_1hot)
-
+            s, reward, done, _ = self.env.step(action)
+            rewards.append(reward)
 
         return states, actions, rewards
     
