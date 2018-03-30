@@ -152,19 +152,19 @@ def main(args):
     #       performance.
 
     # Training the model by collecting data over 1 episode
-    imitation_1 = Imitation()
+    imitation_1 = Imitation(model_config_path, expert_weights_path)
     imitation_1.train(env, 1, 50, True)
 
     # Training the model by collecting data over 10 episode
-    imitation_10 = Imitation()
+    imitation_10 = Imitation(model_config_path, expert_weights_path)
     imitation_10.train(env, 10, 50, True)
 
     # Training the model by collecting data over 50 episode
-    imitation_50 = Imitation()
+    imitation_50 = Imitation(model_config_path, expert_weights_path)
     imitation_50.train(env, 50, 50, True)
 
     # Training the model by collecting data over 100 episode
-    imitation_100 = Imitation()
+    imitation_100 = Imitation(model_config_path, expert_weights_path)
     imitation_100.train(env, 100, 50, True)
 
 
