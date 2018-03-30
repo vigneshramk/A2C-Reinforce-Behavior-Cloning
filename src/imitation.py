@@ -9,6 +9,8 @@ from keras import metrics
 import tensorflow as tf
 from tensorflow import set_random_seed
 
+from keras.utils.np_utils import to_categorical
+
 
 class Imitation():
     def __init__(self, model_config_path, expert_weights_path):
@@ -50,6 +52,16 @@ class Imitation():
         states = []
         actions = []
         rewards = []
+
+        s = env.reset()
+        states.append(s)
+        done = False
+        while(done != True):
+            action = self.expert.predict(s)
+            action_1hot = to_categorical(action, num_classes=4)
+            actions.append(action_1hot)
+
+
         return states, actions, rewards
     
     def train(self, env, num_episodes=100, num_epochs=50, render=False):
