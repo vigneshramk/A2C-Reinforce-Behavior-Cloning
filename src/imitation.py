@@ -81,9 +81,12 @@ class Imitation():
         acc = 0
 
         # Prepare the input data and label
-        states, actions, rewards = generate_episode(env, render)
-        x_train = states
-        y_train = actions
+        x_train = []
+        y_train = []
+        for i in range(num_episodes):
+            states, actions, rewards = run_expert(env, render)
+            x_train.append(states)
+            y_train.append(actions)
 
         # Training the model
         history = self.model.fit(x_train, y_train, \
