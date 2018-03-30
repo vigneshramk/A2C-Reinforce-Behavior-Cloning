@@ -8,7 +8,6 @@ Description:
 """
 
 import tensorflow as tf
-from torch.autograd import Variable
 import numpy as np
 import scipy.misc 
 import os
@@ -93,11 +92,6 @@ class Logger(object):
 
     def to_np(self, x):
         return x.data.cpu().numpy()
-
-    def to_var(self, x):
-        if torch.cuda.is_available():
-            x = x.cuda()
-        return Variable(x)
 
     def model_param_histo_summary(self, model, step):
         """log histogram summary of model's parameters
