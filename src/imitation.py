@@ -127,11 +127,21 @@ def main(args):
     # TODO: Train cloned models using imitation learning, and record their
     #       performance.
 
+    # Training the model by collecting data over 1 episode
     imitation_1 = Imitation()
+    imitation_1.train(env, 1, 50, True)
 
+    # Training the model by collecting data over 10 episode
     imitation_10 = Imitation()
+    imitation_10.train(env, 10, 50, True)
+
+    # Training the model by collecting data over 50 episode
     imitation_50 = Imitation()
+    imitation_50.train(env, 50, 50, True)
+
+    # Training the model by collecting data over 100 episode
     imitation_100 = Imitation()
+    imitation_100.train(env, 100, 50, True)
 
 
 if __name__ == '__main__':
