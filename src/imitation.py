@@ -37,6 +37,8 @@ class Imitation():
         self.batch_size = 32
         self.logger = Logger('./tmp/Imitation', 'Imitation_Learning')
 
+        print('Finished initializing')
+
     def run_expert(self, env, render=False):
         # Generates an episode by running the expert policy on the given env.
         return Imitation.generate_episode(self.expert, env, render)
