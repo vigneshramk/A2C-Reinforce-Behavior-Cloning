@@ -12,6 +12,7 @@ from logger import Logger
 from keras.optimizers import Adam
 
 from keras.utils.np_utils import to_categorical
+from keras.optimizers import Adam
 
 
 class Imitation():
