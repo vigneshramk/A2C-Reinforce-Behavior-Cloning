@@ -93,6 +93,8 @@ class Imitation():
         # Prepare the input data and label
         x_train = []
         y_train = []
+
+
         for i in range(num_episodes):
             states, actions, rewards = self.run_expert(env, render)
             x_train.append(states)
@@ -103,6 +105,7 @@ class Imitation():
         x_train = np.reshape(x_train, [x_train.shape[1], x_train.shape[3]])
         y_train = np.array(y_train)
         y_train = np.reshape(y_train, [y_train.shape[1], y_train.shape[3]])
+
 
         # Training the model
         history = self.model.fit(x_train, y_train, \
