@@ -6,6 +6,7 @@ import random
 import gym
 
 from keras import metrics
+import tensorflow as tf
 from tensorflow import set_random_seed
 
 
@@ -92,6 +93,14 @@ def main(args):
     model_config_path = args.model_config_path
     expert_weights_path = args.expert_weights_path
     render = args.render
+
+    # Setting the session to allow growth, so it doesn't allocate all GPU memory.
+    gpu_ops = tf.GPUOptions(allow_growth=True)
+    config = tf.ConfigProto(gpu_options=gpu_ops)
+    sess = tf.Session(config=config)
+
+    # Setting this as the default tensorflow session.
+    keras.backend.tensorflow_backend.set_session(sess)
     
     # Create the environment.
     env = gym.make('LunarLander-v2')
@@ -103,6 +112,11 @@ def main(args):
     
     # TODO: Train cloned models using imitation learning, and record their
     #       performance.
+
+    imitation_1 = Imitation()
+    imitation_10 = Imitation()
+    imitation_50 = Imitation()
+    imitation_100 = Imitation()
 
 
 if __name__ == '__main__':
