@@ -67,7 +67,6 @@ class Imitation():
             states.append(s)
             action_softmax = model.predict(s)
             action = np.argmax(action_softmax)
-            print action
             action_1hot = to_categorical(action, num_classes=4)
             actions.append(action_1hot)
 
@@ -98,6 +97,12 @@ class Imitation():
             states, actions, rewards = self.run_expert(env, render)
             x_train.append(states)
             y_train.append(actions)
+
+        x_train = np.array(x_train)
+        print np.shape(x_train)
+        x_train = np.reshape(x_train, [x_train.shape[1], x_train.shape[3]])
+        y_train = np.array(y_train)
+        y_train = np.reshape(y_train, [y_train.shape[1], y_train.shape[3]])
 
         # Training the model
         history = self.model.fit(x_train, y_train, \
