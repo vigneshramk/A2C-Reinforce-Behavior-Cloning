@@ -38,6 +38,27 @@ class Reinforce(object):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
+
+        states,actions,rewards = self.generate_episode(env)
+
+        states = np.array(states)
+        actions = np.array(actions)
+        rewards = np.array(rewards)
+
+        T = len(rewards)
+        G = np.zeros(T)
+
+        for t in range(T)[::-1]:
+
+            K = range(t,T)
+            gamma_vec = [pow(gamma,k-t) for k in K]
+            # Returns for each step back from the goal
+            G[t] = np.sum(rewards[t-T:]*gamma_vec)
+
+        #Define the loss and do model.fit here
+
+
+
         return
 
     def generate_episode(self, env, render=False):
