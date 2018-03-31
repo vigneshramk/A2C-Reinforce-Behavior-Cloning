@@ -43,7 +43,7 @@ class Reinforce(object):
 
         states = np.array(states)
         actions = np.array(actions)
-        rewards = np.array(rewards)
+        rewards = np.array(rewards)*1e-2
 
         T = len(rewards)
         G = np.zeros(T)

@@ -31,7 +31,7 @@ class Imitation():
         self.optimizer = Adam(lr=0.003)
         self.model.compile(loss='categorical_crossentropy',\
                            optimizer=self.optimizer,\
-                           metrics=[metrics.categorical_crossentropy])
+                           metrics=[metrics.categorical_crossentropy, 'acc'])
 
         # Setting the batch size
         self.batch_size = 32
@@ -76,7 +76,7 @@ class Imitation():
             actions.append(action_1hot)
             rewards.append(reward)
 
-            s = nexts
+            s = nexts   
 
         return states, actions, rewards
     
@@ -116,8 +116,8 @@ class Imitation():
 
         # Get the loss and accuracy from history
         # self.logger.scalar_summary()
-        print history.history.keys()
-        # print history.history['acc']
+        # print history.history.keys()
+        print history.history['acc']
 
         return loss, acc
 
