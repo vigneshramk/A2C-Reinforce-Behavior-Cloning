@@ -22,6 +22,16 @@ class Reinforce(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
+        self.optimizer = Adam(lr=0.003)
+
+        self.model.compile(loss='',optimizer=self.optimizer)
+
+        # Setting the batch size
+        self.batch_size = 32
+        self.logger = Logger('./tmp/Reinforce', 'Policy_Gradients')
+
+        print('Finished initializing')
+
           
 
     def train(self, env, gamma=1.0):
