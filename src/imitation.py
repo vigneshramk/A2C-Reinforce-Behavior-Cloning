@@ -63,17 +63,20 @@ class Imitation():
         s = np.array(s)
         done = False
         while(done != True):
+            
             s = np.reshape(s,[1,8])
-            states.append(s)
             action_softmax = model.predict(s)
             action = np.argmax(action_softmax)
             action_1hot = to_categorical(action, num_classes=4)
+            nexts, reward, done, _ = env.step(action)
+            nexts = np.array(nexts)
+            
+            # Append the s,a,r for the current time-step
+            states.append(s)
             actions.append(action_1hot)
-
-            s, reward, done, _ = env.step(action)
-            s = np.array(s)
-
             rewards.append(reward)
+
+            s = nexts
 
         return states, actions, rewards
     

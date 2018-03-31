@@ -9,6 +9,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+from keras.utils.np_utils import to_categorical
+from keras.optimizers import Adam
+
 
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
@@ -17,7 +20,9 @@ class Reinforce(object):
         self.model = model
 
         # TODO: Define any training operations and optimizers here, initialize
-        #       your variables, or alternately compile your model here.  
+        #       your variables, or alternately compile your model here.
+
+          
 
     def train(self, env, gamma=1.0):
         # Trains the model on a single episode using REINFORCE.
@@ -36,8 +41,26 @@ class Reinforce(object):
         actions = []
         rewards = []
 
-        return states, actions, rewards
+        s = env.reset()
+        s = np.array(s)
+        done = False
+        while(done != True):
+            
+            s = np.reshape(s,[1,8])
+            action_softmax = model.predict(s)
+            action = np.argmax(action_softmax)
+            action_1hot = to_categorical(action, num_classes=4)
+            nexts, reward, done, _ = env.step(action)
+            nexts = np.array(nexts)
+            
+            # Append the s,a,r for the current time-step
+            states.append(s)
+            actions.append(action_1hot)
+            rewards.append(reward)
 
+            s = nexts
+
+        return states, actions, rewards
 
 def parse_arguments():
     # Command-line flags are defined here.
