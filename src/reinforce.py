@@ -31,8 +31,11 @@ class Policy(nn.Modules):
         x = self.classifier(x)
         return F.softmax(x, dim=1)
 
+
+
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
+
 
     def __init__(self, model, lr):
         self.model = model
@@ -40,18 +43,10 @@ class Reinforce(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        self.optimizer = torch.optim.SGD(self.parameters(),
-                                         lr=lr,
-                                         momentum=0.9)
-
-        # Setting the batch size
-        self.batch_size = 32
-        self.logger = Logger('./tmp/Reinforce', 'Policy_Gradients')
+        optimizer = optim.Adam(model.parameters(), lr=lr)
 
         print('Finished initializing')
-
           
-
     def train(self, env, gamma=1.0):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
@@ -92,6 +87,7 @@ class Reinforce(object):
         states = []
         actions = []
         rewards = []
+        log_probs = []
 
         s = env.reset()
         s = np.array(s)
@@ -99,20 +95,27 @@ class Reinforce(object):
         while(done != True):
             
             s = np.reshape(s,[1,8])
-            action_softmax = model.predict(s)
-            action = np.argmax(action_softmax)
-            action_1hot = to_categorical(action, num_classes=4)
+            action_probs = model(Variable(s))
+            action_softmax = Categorical(action_probs)
+            #Sample action according to the softmax distribution
+            action_sample = action_softmax.sample()
+            log_prob = action_softmax.log_prob(action_sample)
+
+            # Use this action to step through the episode
+            action = action_sample.data[0]
+            
             nexts, reward, done, _ = env.step(action)
             nexts = np.array(nexts)
             
             # Append the s,a,r for the current time-step
             states.append(s)
-            actions.append(action_1hot)
+            actions.append(action)
             rewards.append(reward)
+            log_probs.append(log_prob)
 
             s = nexts
 
-        return states, actions, rewards
+        return states, actions, rewards, log_probs
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -148,6 +151,8 @@ def main(args):
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
+
+
     
     # print env.observation_space.high
     # Load the policy model from file.
@@ -155,6 +160,11 @@ def main(args):
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
+
+    policy = Policy()
+
+    reinforce = Reinforce(policy,lr=0.001)
+
 
 
 if __name__ == '__main__':
