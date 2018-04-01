@@ -101,7 +101,8 @@ class Reinforce(object):
         while(done != True):
             
             s = np.reshape(s,[1,8])
-            action_probs = model(Variable(s))
+            s_th = torch.from_numpy(s).float().unsqueeze(0)
+            action_probs = self.model(Variable(s_th))
             action_softmax = Categorical(action_probs)
             #Sample action according to the softmax distribution
             action_sample = action_softmax.sample()
@@ -163,8 +164,8 @@ def main(args):
 
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.shape[0]
+    state_size = 8
+    action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
     policy = Policy(state_size, action_size)
     reinforce = Reinforce(policy,lr=0.001)
