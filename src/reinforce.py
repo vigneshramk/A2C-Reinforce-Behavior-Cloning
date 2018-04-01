@@ -49,7 +49,7 @@ class Reinforce(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        optimizer = optim.Adam(model.parameters(), lr=lr)
+        self.optimizer = optim.Adam(model.parameters(), lr=lr)
 
         print('Finished initializing')
           
