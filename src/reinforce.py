@@ -195,6 +195,7 @@ def main(args):
 
         print("Rewards for episode %s is %1.2f" %(i,cum_reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
+        
 
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
