@@ -12,44 +12,24 @@ import matplotlib.pyplot as plt
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import Adam
 
-
-# Torch libraries
-import torch
-import torch.nn as nn
-
-
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
 
-    def __init__(self):
+    def __init__(self, model, lr):
+        self.model = model
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        super(Reinforce, self).__init__()
+        self.optimizer = Adam(lr=0.003)
 
-        sself.branch1 = nn.Sequential(
-                nn.Linear(state_size, hidden_size),
-                nn.ReLU(),
+        self.model.compile(loss='',optimizer=self.optimizer)
 
-                nn.Linear(hidden_size, hidden_size),
-                nn.ReLU(),
+        # Setting the batch size
+        self.batch_size = 32
+        self.logger = Logger('./tmp/Reinforce', 'Policy_Gradients')
 
-                nn.Linear(hidden_size, 1)
-        )
-
-        self.branch2 = nn.Sequential(
-                nn.Linear(state_size, hidden_size),
-                nn.ReLU(),
-
-                nn.Linear(hidden_size, hidden_size),
-                nn.ReLU(),
-
-                nn.Linear(hidden_size, action_size)
-        )
-
-        
-    def forward(self,x):
+        print('Finished initializing')
 
           
 
