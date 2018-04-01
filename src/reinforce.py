@@ -64,7 +64,6 @@ class Reinforce(object):
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
         log_probs = np.array(log_probs)
-        print log_probs
 
         T = len(rewards)
         G = np.zeros(T)
@@ -116,7 +115,6 @@ class Reinforce(object):
             #Sample action according to the softmax distribution
             action_sample = action_softmax.sample()
             log_prob = action_softmax.log_prob(action_sample)
-
             # Use this action to step through the episode
             action = action_sample.data[0]
             
@@ -127,7 +125,7 @@ class Reinforce(object):
             states.append(s)
             actions.append(action)
             rewards.append(reward)
-            log_probs.append(log_prob)
+            log_probs.append(log_prob.data[0])
 
             s = nexts
 
