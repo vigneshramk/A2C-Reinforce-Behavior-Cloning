@@ -169,6 +169,15 @@ def main(args):
     num_episodes = 1000
     gamma =1
 
+    # Create plot
+    plt1 = plt.figure()
+    ax1 = plt.gca()
+    path_name = './fig'
+    plot_name = os.path.join(path_name,'reinforce_discounted_reward.png')
+
+    # Create plot dir
+    if not os.path.exists(path_name):
+        os.makedirs(path_name)
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
     state_size = 8
@@ -185,6 +194,11 @@ def main(args):
        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
        print("Loss for episode %s is %1.2f" %(i,loss))
 
+        # Plot the discounted reward per episode
+        ax1.scatter(i, cum_reward)
+        plt.pause(0.00001)
+        if i%200 == 0:
+            ax1.figure.savefig(plot_name)
 
 if __name__ == '__main__':
     main(sys.argv)
