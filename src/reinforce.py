@@ -68,8 +68,7 @@ class Reinforce(object):
 
         T = len(rewards)
         G = np.zeros(T)
-        sampled_action = np.zeros(T)
-
+        
         for t in range(T)[::-1]:
 
             K = range(t,T)

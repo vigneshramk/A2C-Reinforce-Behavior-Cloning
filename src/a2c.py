@@ -69,12 +69,30 @@ class A2C(Reinforce):
         self.n = n
 
         # TODO: Define any training operations and optimizers here, initialize
-        #       your variables, or alternately compile your model here.  
+        #       your variables, or alternately compile your model here.
+
+        self.optimizer = optim.Adam(model.parameters(), lr=lr)
+
+        self.optimizer = optim.Adam(critic_model.parameters(), lr=critic_lr)
+
+        print('Finished initializing')
+  
 
     def train(self, env, gamma=1.0):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
+
+        states,actions,rewards, log_probs = self.generate_episode(env)
+
+        states = np.array(states)
+        actions = np.array(actions)
+        rewards = np.array(rewards)*1e-2
+        log_probs = np.array(log_probs)
+
+        T = len(rewards)
+
+
         return
 
 def parse_arguments():
@@ -124,6 +142,10 @@ def main(args):
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
+    #Define actor and crtiic learning rates here
+    actor_lr = 1e-3
+    critic_lr = 1e-3
+
     # TODO: Train the model using A2C and plot the learning curves.
 
     #Create instances of actor and critic
@@ -134,7 +156,7 @@ def main(args):
     actor.cuda()
     actor.train()
 
-    a2cAgent = A2C()
+    a2cAgent = A2C(actor, actor_lr,critic, critic_lr, n)
 
 
 
