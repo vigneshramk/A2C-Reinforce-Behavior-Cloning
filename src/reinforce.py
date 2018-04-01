@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
+import network
 
 class Policy(nn.Modules):
     def __init__(self, state_size, action_size):
@@ -52,16 +53,15 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
 
-        states,actions,rewards = self.generate_episode(env)
+        states,actions,rewards, log_probs = self.generate_episode(env)
 
         states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
 
-        sampled_action = actions.copy()
-
         T = len(rewards)
         G = np.zeros(T)
+        sampled_action = np.zeros(T)
 
         for t in range(T)[::-1]:
 
@@ -70,10 +70,17 @@ class Reinforce(object):
             # Returns for each step back from the goal
             G[t] = np.sum(rewards[t-T:]*gamma_vec)  
 
-        #Define the loss and do model.fit here
-        print("Probs:{}, Actions:{}".format())
-        # loss = np.mean(np.dot(G, ))
 
+        #Define the loss and do model.fit here
+        # print("Probs:{}, Actions:{}".format())
+        G_var = network.np_to_variable(G, is_cuda=True)
+        log_probs_var = network.np_to_variable(log_probs, is_cuda=True)
+        loss = torch.mean(torch.mul(G_var, log_probs_var))
+        loss = -1*loss
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         return
 
