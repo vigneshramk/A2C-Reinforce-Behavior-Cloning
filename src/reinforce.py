@@ -14,8 +14,8 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-def np_to_variable(x, is_cuda=True, dtype=torch.FloatTensor):
-    v = Variable(torch.from_numpy(x).type(dtype))
+def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
+    v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
     if is_cuda:
         v = v.cuda()
     return v
@@ -79,13 +79,15 @@ class Reinforce(object):
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
-        G_var = np_to_variable(G, is_cuda=True)
-        log_probs_var = np_to_variable(log_probs, is_cuda=True)
-        loss = torch.mean(torch.mul(G_var, log_probs_var))
-        loss = -1*loss
+        loss = -1*np.mean(np.dot(G, log_probs))
+        loss = loss.astype('float')
+        loss = np.array([loss])
+        loss_th = np_to_variable(loss, requires_grad=True)
+
+        print loss_th
 
         self.optimizer.zero_grad()
-        loss.backward()
+        loss_th.backward()
         self.optimizer.step()   
 
         return
@@ -108,7 +110,7 @@ class Reinforce(object):
         while(done != True):
             
             s = np.reshape(s,[1,8])
-            s_th = np_to_variable(s)
+            s_th = np_to_variable(s, requires_grad=True)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
 
