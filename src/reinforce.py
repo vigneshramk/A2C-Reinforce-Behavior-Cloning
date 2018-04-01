@@ -73,7 +73,7 @@ class Reinforce(object):
             K = range(t,T)
             gamma_vec = [pow(gamma,k-t) for k in K]
             # Returns for each step back from the goal
-            G[t] = np.sum(rewards[t-T:]*gamma_vec)
+            G[t] = np.sum(rewards[t-T:]*gamma_vec)  
 
         #Define the loss and do model.fit here
         print("Probs:{}, Actions:{}".format())
@@ -149,11 +149,10 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
     
+    # print env.observation_space.high
     # Load the policy model from file.
     with open(model_config_path, 'r') as f:
         model = keras.models.model_from_json(f.read())
-
-    print model.summary()
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
 
