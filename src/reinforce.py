@@ -84,13 +84,11 @@ class Reinforce(object):
         loss = np.array([loss])
         loss_th = np_to_variable(loss, requires_grad=True)
 
-        print loss_th
-
         self.optimizer.zero_grad()
         loss_th.backward()
         self.optimizer.step()   
 
-        return
+        return G[0], loss
 
     def generate_episode(self, env, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -182,7 +180,10 @@ def main(args):
     reinforce = Reinforce(policy,lr=0.001)
 
     for i in range(num_episodes):
-        reinforce.train(env,gamma)
+       cum_reward, loss = reinforce.train(env,gamma)
+
+       print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+       print("Loss for episode %s is %1.2f" %(i,loss))
 
 
 if __name__ == '__main__':
