@@ -1,8 +1,6 @@
 import sys
 import argparse
 import numpy as np
-import tensorflow as tf
-import keras
 import gym
 
 import matplotlib
@@ -11,6 +9,47 @@ import matplotlib.pyplot as plt
 
 from reinforce import Reinforce
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.autograd import Variable
+from torch.distributions import Categorical
+
+class Policy(nn.Module):
+    def __init__(self, state_size, action_size):
+        super(Policy, self).__init__()
+        self.hidden_size = 16
+        self.classifier = nn.Sequential(
+                          nn.Linear(state_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, action_size))
+
+    def forward(self, x):
+        x = self.classifier(x)
+        return F.softmax(x, dim=1)
+
+
+class Value(nn.Module):
+    def __init__(self, state_size, action_size):
+        super(Value, self).__init__()
+        self.hidden_size = 16
+        self.classifier = nn.Sequential(
+                          nn.Linear(state_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, action_size))
+
+    def forward(self, x):
+        x = self.classifier(x)
+        return x
 
 class A2C(Reinforce):
     # Implementation of N-step Advantage Actor Critic.
@@ -37,7 +76,6 @@ class A2C(Reinforce):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         return
-
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -79,12 +117,25 @@ def main(args):
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
-    
-    # Load the actor model from file.
-    with open(model_config_path, 'r') as f:
-        model = keras.models.model_from_json(f.read())
+
+    num_episodes = 10000
+    gamma =1
+    state_size = 8
+    action_size = 4
+    print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     # TODO: Train the model using A2C and plot the learning curves.
+
+    #Create instances of actor and critic
+    critic = Value(state_size,action_size)
+    critic.cuda()
+    critic.train()
+    actor = Policy(state_size,action_size)
+    actor.cuda()
+    actor.train()
+
+    a2cAgent = A2C()
+
 
 
 if __name__ == '__main__':
