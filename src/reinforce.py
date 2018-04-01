@@ -14,6 +14,12 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+def np_to_variable(x, is_cuda=True, dtype=torch.FloatTensor):
+    v = Variable(torch.from_numpy(x).type(dtype))
+    if is_cuda:
+        v = v.cuda()
+    return v
+
 class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
@@ -21,9 +27,9 @@ class Policy(nn.Module):
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.ReLU(inplace=True),
-                          nn.Linear(state_size, self.hidden_size),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
-                          nn.Linear(state_size, self.hidden_size),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
                           nn.Linear(self.hidden_size, action_size))
 
@@ -57,6 +63,8 @@ class Reinforce(object):
         states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
+        log_probs = np.array(log_probs)
+        print log_probs
 
         T = len(rewards)
         G = np.zeros(T)
@@ -72,8 +80,8 @@ class Reinforce(object):
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
-        G_var = torch.from_numpy(G, is_cuda=True)
-        log_probs_var = torch.from_numpy(log_probs, is_cuda=True)
+        G_var = np_to_variable(G, is_cuda=True)
+        log_probs_var = np_to_variable(log_probs, is_cuda=True)
         loss = torch.mean(torch.mul(G_var, log_probs_var))
         loss = -1*loss
 
@@ -101,9 +109,10 @@ class Reinforce(object):
         while(done != True):
             
             s = np.reshape(s,[1,8])
-            s_th = torch.from_numpy(s).float().unsqueeze(0)
-            action_probs = self.model(Variable(s_th))
+            s_th = np_to_variable(s)
+            action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
+
             #Sample action according to the softmax distribution
             action_sample = action_softmax.sample()
             log_prob = action_softmax.log_prob(action_sample)
@@ -168,6 +177,8 @@ def main(args):
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
     policy = Policy(state_size, action_size)
+    policy.cuda()
+    policy.train()
     reinforce = Reinforce(policy,lr=0.001)
 
     for i in range(num_episodes):
