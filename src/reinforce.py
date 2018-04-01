@@ -13,19 +13,18 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
-import network
 
-class Policy(nn.Modules):
+class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Relu(inplace=True),
+                          nn.ReLU(inplace=True),
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Relu(inplace=True),
+                          nn.ReLU(inplace=True),
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Relu(inplace=True),
+                          nn.ReLU(inplace=True),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -73,8 +72,8 @@ class Reinforce(object):
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
-        G_var = network.np_to_variable(G, is_cuda=True)
-        log_probs_var = network.np_to_variable(log_probs, is_cuda=True)
+        G_var = torch.from_numpy(G, is_cuda=True)
+        log_probs_var = torch.from_numpy(log_probs, is_cuda=True)
         loss = torch.mean(torch.mul(G_var, log_probs_var))
         loss = -1*loss
 
@@ -163,23 +162,15 @@ def main(args):
     gamma =1
 
 
-    
-    # print env.observation_space.high
-    # Load the policy model from file.
-    with open(model_config_path, 'r') as f:
-        model = keras.models.model_from_json(f.read())
-
     # TODO: Train the model using REINFORCE and plot the learning curve.
-
-    policy = Policy()
-
+    state_size = env.observation_space.shape[0]
+    action_size = env.action_space.shape[0]
+    print("State_size:{}, Action_size{}".format(state_size, action_size))
+    policy = Policy(state_size, action_size)
     reinforce = Reinforce(policy,lr=0.001)
-
 
     for i in range(num_episodes):
         reinforce.train(env,gamma)
-
-
 
 
 if __name__ == '__main__':
