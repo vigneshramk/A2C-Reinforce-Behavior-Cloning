@@ -1,16 +1,35 @@
 import sys
 import argparse
 import numpy as np
-import tensorflow as tf
-import keras
 import gym
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from keras.utils.np_utils import to_categorical
-from keras.optimizers import Adam
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.autograd import Variable
+from torch.distributions import Categorical
+
+class Policy(nn.Modules):
+    def __init__(self, state_size, action_size):
+        super(Policy, self).__init__()
+        self.hidden_size = 16
+        self.classifier = nn.Sequential(
+                          nn.Linear(state_size, self.hidden_size),
+                          nn.Relu(inplace=True),
+                          nn.Linear(state_size, self.hidden_size),
+                          nn.Relu(inplace=True),
+                          nn.Linear(state_size, self.hidden_size),
+                          nn.Relu(inplace=True),
+                          nn.Linear(self.hidden_size, action_size))
+
+    def forward(self, x):
+        x = self.classifier(x)
+        return F.softmax(x, dim=1)
 
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
@@ -21,9 +40,9 @@ class Reinforce(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        self.optimizer = Adam(lr=0.003)
-
-        self.model.compile(loss='',optimizer=self.optimizer)
+        self.optimizer = torch.optim.SGD(self.parameters(),
+                                         lr=lr,
+                                         momentum=0.9)
 
         # Setting the batch size
         self.batch_size = 32
@@ -44,6 +63,8 @@ class Reinforce(object):
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
 
+        sampled_action = actions.copy()
+
         T = len(rewards)
         G = np.zeros(T)
 
@@ -55,7 +76,8 @@ class Reinforce(object):
             G[t] = np.sum(rewards[t-T:]*gamma_vec)
 
         #Define the loss and do model.fit here
-
+        print("Probs:{}, Actions:{}".format())
+        # loss = np.mean(np.dot(G, ))
 
 
         return
