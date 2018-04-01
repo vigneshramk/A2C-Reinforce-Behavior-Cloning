@@ -13,24 +13,43 @@ from keras.utils.np_utils import to_categorical
 from keras.optimizers import Adam
 
 
+# Torch libraries
+import torch
+import torch.nn as nn
+
+
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
 
-    def __init__(self, model, lr):
-        self.model = model
+    def __init__(self):
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        self.optimizer = Adam(lr=0.003)
+        super(Reinforce, self).__init__()
 
-        self.model.compile(loss='',optimizer=self.optimizer)
+        sself.branch1 = nn.Sequential(
+                nn.Linear(state_size, hidden_size),
+                nn.ReLU(),
 
-        # Setting the batch size
-        self.batch_size = 32
-        self.logger = Logger('./tmp/Reinforce', 'Policy_Gradients')
+                nn.Linear(hidden_size, hidden_size),
+                nn.ReLU(),
 
-        print('Finished initializing')
+                nn.Linear(hidden_size, 1)
+        )
+
+        self.branch2 = nn.Sequential(
+                nn.Linear(state_size, hidden_size),
+                nn.ReLU(),
+
+                nn.Linear(hidden_size, hidden_size),
+                nn.ReLU(),
+
+                nn.Linear(hidden_size, action_size)
+        )
+
+        
+    def forward(self,x):
 
           
 
@@ -131,6 +150,8 @@ def main(args):
     # Load the policy model from file.
     with open(model_config_path, 'r') as f:
         model = keras.models.model_from_json(f.read())
+
+    print model.summary()
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
 
