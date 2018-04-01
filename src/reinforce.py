@@ -4,8 +4,8 @@ import numpy as np
 import gym
 import os
 
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import torch
@@ -89,7 +89,7 @@ class Reinforce(object):
         loss_th.backward()
         self.optimizer.step()   
 
-        return G[0], loss
+        return np.sum(rewards), loss
 
     def generate_episode(self, env, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -167,8 +167,8 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
 
-    num_episodes = 1000
-    gamma =1
+    num_episodes = 10000
+    gamma = 0.95
 
     # Create plot
     fig1 = plt.figure()
@@ -188,18 +188,20 @@ def main(args):
     policy = Policy(state_size, action_size)
     policy.cuda()
     policy.train()
-    reinforce = Reinforce(policy,lr=0.001)
+    reinforce = Reinforce(policy,lr=0.0001)
 
     for i in range(num_episodes):
         cum_reward, loss = reinforce.train(env,gamma)
 
+        cum_reward *= 100
+
         print("Rewards for episode %s is %1.2f" %(i,cum_reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
-        
+
 
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
-        plt.pause(0.001)
+        # plt.pause(0.001)
         if i%200 == 0:
             ax1.figure.savefig(plot_name)
 
