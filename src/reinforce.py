@@ -80,7 +80,7 @@ class Reinforce(object):
 
         self.optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self.optimizer.step()   
 
         return
 
@@ -159,6 +159,9 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
 
+    num_episodes = 1000
+    gamma =1
+
 
     
     # print env.observation_space.high
@@ -171,6 +174,11 @@ def main(args):
     policy = Policy()
 
     reinforce = Reinforce(policy,lr=0.001)
+
+
+    for i in range(num_episodes):
+        reinforce.train(env,gamma)
+
 
 
 
