@@ -2,6 +2,7 @@ import sys
 import argparse
 import numpy as np
 import gym
+import os
 
 import matplotlib
 matplotlib.use('Agg')
@@ -170,8 +171,9 @@ def main(args):
     gamma =1
 
     # Create plot
-    plt1 = plt.figure()
-    ax1 = plt.gca()
+    fig1 = plt.figure()
+    ax1 = fig1.gca()
+    ax1.set_title('Per episode Cum. Return Plot')
     path_name = './fig'
     plot_name = os.path.join(path_name,'reinforce_discounted_reward.png')
 
@@ -189,14 +191,14 @@ def main(args):
     reinforce = Reinforce(policy,lr=0.001)
 
     for i in range(num_episodes):
-       cum_reward, loss = reinforce.train(env,gamma)
+        cum_reward, loss = reinforce.train(env,gamma)
 
-       print("Rewards for episode %s is %1.2f" %(i,cum_reward))
-       print("Loss for episode %s is %1.2f" %(i,loss))
+        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+        print("Loss for episode %s is %1.2f" %(i,loss))
 
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
-        plt.pause(0.00001)
+        plt.pause(0.001)
         if i%200 == 0:
             ax1.figure.savefig(plot_name)
 
