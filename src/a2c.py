@@ -16,6 +16,23 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
+    v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
+    if is_cuda:
+        v = v.cuda()
+    return v
+
+def weights_normal_init(model, dev=0.01):
+    if isinstance(model, list):
+        for m in model:
+            weights_normal_init(m, dev)
+    else:
+        for m in model.modules():
+            if isinstance(m, nn.Conv2d):
+                m.weight.data.normal_(0.0, dev)
+            elif isinstance(m, nn.Linear):
+                m.weight.data.normal_(0.0, dev)
+
 class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
@@ -45,7 +62,7 @@ class Value(nn.Module):
                           nn.ReLU(inplace=True),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, action_size))
+                          nn.Linear(self.hidden_size, 1))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -88,19 +105,17 @@ class A2C(Reinforce):
         states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
-        log_probs = np.array(log_probs)
-
-        action_size = 4
-
+        # log_probs = np.array(log_probs)
+        
         T = len(rewards)
         R = np.zeros(T)
         N_vec = range(self.n)
         gamma_vec = [pow(gamma,n) for n in N_vec]
-        V_vec = np.zeros([T,action_size])
+        V_vec = np.zeros(T)
 
         for t in range(T):
             s_curr = np_to_variable(states[t], requires_grad=True)
-            V_vec[t] = self.critic_model(s_curr)
+            V_vec[t] = self.critic_model(s_curr).data.cpu().numpy()[0]
         
         # Compute the N-step rewards
         for t in range(T)[::-1]:
@@ -112,25 +127,42 @@ class A2C(Reinforce):
             for k in range(self.n):
                 if(t+k) < T:
                     r_n[k] = rewards[t+k]
-            R[t] = pow(gamma,self.n)*V_end + np.dot(gamma_vec,r_n)
+            R[t] = np.power(gamma,self.n)*V_end + np.dot(gamma_vec,r_n)
 
         #Cum rewards vector for each episode
         cum_R = rewards - V_vec
 
+        cum_R_th = torch.Tensor(cum_R)
+
+        print(type(log_probs))
+        print(type(cum_R_th))
+
 
         #Loss definition for the actor and critic networks
         #Actor
-        loss_actor = -1*np.mean(np.dot(cum_R, log_probs))
-        loss_actor = loss_actor.astype('float')
-        loss_actor = np.array([loss_actor])
-        loss_th_actor = np_to_variable(loss_actor, requires_grad=True)
+
+        hadamard_prod = []
+        for l_prob, c_R in zip(log_probs, cum_R_th):
+            hadamard_prod.append(-l_prob * c_R)
 
         self.optimizer_actor.zero_grad()
-        loss_th_actor.backward()
+        loss_actor = torch.cat(hadamard_prod).sum()
+        loss_actor.backward()
         self.optimizer_actor.step()
+
+
+        # loss_actor = -1*np.mean(np.dot(cum_R, log_probs))
+        # print(loss_actor)   
+        # loss_actor = loss_actor.astype('float')
+        # loss_actor = np.array([loss_actor])
+        # loss_th_actor = np_to_variable(loss_actor, requires_grad=True)
+
+        # self.optimizer_actor.zero_grad()
+        # loss_th_actor.backward()
+        # self.optimizer_actor.step()
         
         #Critic
-        loss_critic = np.mean(np.power(cum_R),2)
+        loss_critic = np.mean(np.power(cum_R,2))
         loss_critic = loss_critic.astype('float')
         loss_critic = np.array([loss_critic])
         loss_th_critic = np_to_variable(loss_critic, requires_grad=True)
@@ -203,6 +235,14 @@ def main(args):
     actor.train()
 
     a2cAgent = A2C(actor, actor_lr,critic, critic_lr, n)
+
+    for i in range(num_episodes):
+        cum_reward, loss_actor, loss_critic = a2cAgent.train(env,gamma)
+        cum_reward *= 100
+
+        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+        print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
+        print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
 
 
 
