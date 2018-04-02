@@ -21,18 +21,32 @@ def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor
         v = v.cuda()
     return v
 
+def weights_normal_init(model, dev=0.01):
+    if isinstance(model, list):
+        for m in model:
+            weights_normal_init(m, dev)
+    else:
+        for m in model.modules():
+            if isinstance(m, nn.Conv2d):
+                m.weight.data.normal_(0.0, dev)
+            elif isinstance(m, nn.Linear):
+                m.weight.data.normal_(0.0, dev)
+
 class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, action_size))
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size*2, action_size))
+                          # nn.Linear(self.hidden_size, self.hidden_size),
+                          # nn.ReLU(inplace=True),
+                          # nn.Linear(self.hidden_size, self.hidden_size),
+                          # nn.ReLU(inplace=True),
+                          # nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -88,7 +102,7 @@ class Reinforce(object):
         loss_th.backward()
         self.optimizer.step()   
 
-        return np.sum(rewards), loss
+        return G[0], loss, np.sum(rewards)
 
     def generate_episode(self, env, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -166,15 +180,26 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
 
+    # Set the seeds
+    torch.manual_seed(2018)
+    np.random.seed(2018)
+    env.seed(2018)
+
     num_episodes = 10000
-    gamma = 0.95
+    gamma = 0.99
 
     # Create plot
     fig1 = plt.figure()
     ax1 = fig1.gca()
     ax1.set_title('Per episode Cum. Return Plot')
+
+    fig2 = plt.figure()
+    ax2 = fig2.gca()
+    ax2.set_title('Per episode Reward Plot')
+
     path_name = './fig'
-    plot_name = os.path.join(path_name,'reinforce_discounted_reward.png')
+    plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
+    plot2_name = os.path.join(path_name,'reinforce_reward.png')
 
     # Create plot dir
     if not os.path.exists(path_name):
@@ -185,12 +210,15 @@ def main(args):
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
     policy = Policy(state_size, action_size)
+    weights_normal_init(policy, dev=0.01)
     policy.cuda()
     policy.train()
-    reinforce = Reinforce(policy,lr=0.0001)
+
+    reinforce = Reinforce(policy,lr=0.005)
 
     for i in range(num_episodes):
-        cum_reward, loss = reinforce.train(env,gamma)
+        cum_reward, loss, reward = reinforce.train(env,gamma)
+        reward *= 100
 
         cum_reward *= 100
 
@@ -200,9 +228,10 @@ def main(args):
 
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
-        # plt.pause(0.001)
+        ax2.scatter(i, reward)
         if i%200 == 0:
-            ax1.figure.savefig(plot_name)
+            ax1.figure.savefig(plot1_name)
+            ax2.figure.savefig(plot2_name)
 
 if __name__ == '__main__':
     main(sys.argv)
