@@ -71,9 +71,9 @@ class A2C(Reinforce):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
 
-        self.optimizer = optim.Adam(model.parameters(), lr=lr)
+        self.optimizer_actor = optim.Adam(model.parameters(), lr=lr)
 
-        self.optimizer = optim.Adam(critic_model.parameters(), lr=critic_lr)
+        self.optimizer_critic = optim.Adam(critic_model.parameters(), lr=critic_lr)
 
         print('Finished initializing')
   
@@ -90,10 +90,56 @@ class A2C(Reinforce):
         rewards = np.array(rewards)*1e-2
         log_probs = np.array(log_probs)
 
+        action_size = 4
+
         T = len(rewards)
+        R = np.zeros(T)
+        N_vec = range(self.n)
+        gamma_vec = [pow(gamma,n) for n in N_vec]
+        V_vec = np.zeros([T,action_size])
+
+        for t in range(T):
+            s_curr = np_to_variable(states[t], requires_grad=True)
+            V_vec[t] = self.critic_model(s_curr)
+        
+        # Compute the N-step rewards
+        for t in range(T)[::-1]:
+            if (t + self.n) >= T:
+                V_end = 0
+            else:
+                V_end = V_vec[t+self.n]
+            r_n = np.zeros(self.n)
+            for k in range(self.n):
+                if(t+k) < T:
+                    r_n[k] = rewards[t+k]
+            R[t] = pow(gamma,self.n)*V_end + np.dot(gamma_vec,r_n)
+
+        #Cum rewards vector for each episode
+        cum_R = rewards - V_vec
 
 
-        return
+        #Loss definition for the actor and critic networks
+        #Actor
+        loss_actor = -1*np.mean(np.dot(cum_R, log_probs))
+        loss_actor = loss_actor.astype('float')
+        loss_actor = np.array([loss_actor])
+        loss_th_actor = np_to_variable(loss_actor, requires_grad=True)
+
+        self.optimizer_actor.zero_grad()
+        loss_th_actor.backward()
+        self.optimizer_actor.step()
+        
+        #Critic
+        loss_critic = np.mean(np.power(cum_R),2)
+        loss_critic = loss_critic.astype('float')
+        loss_critic = np.array([loss_critic])
+        loss_th_critic = np_to_variable(loss_critic, requires_grad=True)
+
+        self.optimizer_critic.zero_grad()
+        loss_th_critic.backward()
+        self.optimizer_critic.step()
+
+        return np.sum(rewards), loss_actor, loss_critic
 
 def parse_arguments():
     # Command-line flags are defined here.
