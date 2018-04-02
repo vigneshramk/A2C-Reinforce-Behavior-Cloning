@@ -36,14 +36,22 @@ class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
         self.hidden_size = 16
+
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, action_size))
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size*2, action_size))
+
+        # self.classifier = nn.Sequential(
+        #                   nn.Linear(state_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -93,19 +101,7 @@ class Reinforce(object):
         for log_prob, G_norm in zip(log_probs, G_normalized):
             hadamard_prod.append(-log_prob * G_norm)
 
-        # print type(log_probs[0])
-        # print type(G_normalized[0])
-        # print hadamard_prod
-        # print type(hadamard_prod)
-        # hadamard_prod = np.multiply(G_normalized, log_probs)
-        # loss = -1*np.mean(hadamard_prod)
-        # loss = loss.astype('float')
-        # loss = np.array([loss])
-        # loss_th = np_to_variable(loss, requires_grad=True)
-
-
         self.optimizer.zero_grad()
-        # loss_th.backward()
         loss = torch.cat(hadamard_prod).sum()
         loss.backward()
         self.optimizer.step()   
@@ -223,16 +219,15 @@ def main(args):
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
     policy = Policy(state_size, action_size)
-    weights_normal_init(policy, dev=0.01)
+    # weights_normal_init(policy, dev=0.01)
     policy.cuda()
     policy.train()
 
-    reinforce = Reinforce(policy,lr=0.005)
+    reinforce = Reinforce(policy,lr=0.001)
 
     for i in range(num_episodes):
         cum_reward, loss, reward = reinforce.train(env,gamma)
         reward *= 100
-
         cum_reward *= 100
 
         print("Rewards for episode %s is %1.2f" %(i,cum_reward))
