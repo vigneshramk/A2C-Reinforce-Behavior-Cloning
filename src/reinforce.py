@@ -38,21 +38,16 @@ class Policy(nn.Module):
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
-                          # nn.Linear(self.hidden_size, self.hidden_size),
-                          # nn.ReLU(inplace=True),
-                          # nn.Linear(self.hidden_size, self.hidden_size),
-                          # nn.ReLU(inplace=True),
-                          # nn.Linear(self.hidden_size, action_size))
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
         return F.softmax(x, dim=1)
-
-
 
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
@@ -78,7 +73,6 @@ class Reinforce(object):
         states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
-        log_probs = np.array(log_probs)
 
         T = len(rewards)
         G = np.zeros(T)
@@ -88,18 +82,32 @@ class Reinforce(object):
             K = range(t,T)
             gamma_vec = [pow(gamma,k-t) for k in K]
             # Returns for each step back from the goal
-            G[t] = np.sum(rewards[t-T:]*gamma_vec)  
+            G[t] = np.sum(rewards[t-T:]*gamma_vec)
 
+        G_normalized = torch.Tensor(G)
+        G_normalized = (G_normalized - G_normalized.mean()) / (G_normalized.std() + np.finfo(np.float32).eps)
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
-        loss = -1*np.mean(np.dot(G, log_probs))
-        loss = loss.astype('float')
-        loss = np.array([loss])
-        loss_th = np_to_variable(loss, requires_grad=True)
+        hadamard_prod = []
+        for log_prob, G_norm in zip(log_probs, G_normalized):
+            hadamard_prod.append(-log_prob * G_norm)
+
+        # print type(log_probs[0])
+        # print type(G_normalized[0])
+        # print hadamard_prod
+        # print type(hadamard_prod)
+        # hadamard_prod = np.multiply(G_normalized, log_probs)
+        # loss = -1*np.mean(hadamard_prod)
+        # loss = loss.astype('float')
+        # loss = np.array([loss])
+        # loss_th = np_to_variable(loss, requires_grad=True)
+
 
         self.optimizer.zero_grad()
-        loss_th.backward()
+        # loss_th.backward()
+        loss = torch.cat(hadamard_prod).sum()
+        loss.backward()
         self.optimizer.step()   
 
         return G[0], loss, np.sum(rewards)
@@ -119,10 +127,12 @@ class Reinforce(object):
         s = env.reset()
         s = np.array(s)
         done = False
+
+        num_steps = 0
         while(done != True):
-            
+            num_steps += 1
             s = np.reshape(s,[1,8])
-            s_th = np_to_variable(s, requires_grad=True)
+            s_th = np_to_variable(s, requires_grad=False)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
 
@@ -130,7 +140,8 @@ class Reinforce(object):
             action_sample = action_softmax.sample()
             log_prob = action_softmax.log_prob(action_sample)
             # Use this action to step through the episode
-            action = action_sample.data[0]
+            action = action_sample.data
+            action = action[0]
             
             nexts, reward, done, _ = env.step(action)
             nexts = np.array(nexts)
@@ -139,9 +150,11 @@ class Reinforce(object):
             states.append(s)
             actions.append(action)
             rewards.append(reward)
-            log_probs.append(log_prob.data[0])
+            log_probs.append(log_prob)
 
             s = nexts
+
+        print("Num steps:{}".format(num_steps))
 
         return states, actions, rewards, log_probs
 
