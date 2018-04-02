@@ -2,6 +2,7 @@ import sys
 import argparse
 import numpy as np
 import gym
+import os
 
 import matplotlib
 matplotlib.use('Agg')
@@ -37,14 +38,22 @@ class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
         self.hidden_size = 16
+
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, action_size))
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size*2, action_size))
+
+        # self.classifier = nn.Sequential(
+        #                   nn.Linear(state_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -57,8 +66,6 @@ class Value(nn.Module):
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
@@ -134,10 +141,6 @@ class A2C(Reinforce):
 
         cum_R_th = torch.Tensor(cum_R)
 
-        print(type(log_probs))
-        print(type(cum_R_th))
-
-
         #Loss definition for the actor and critic networks
         #Actor
 
@@ -150,17 +153,6 @@ class A2C(Reinforce):
         loss_actor.backward()
         self.optimizer_actor.step()
 
-
-        # loss_actor = -1*np.mean(np.dot(cum_R, log_probs))
-        # print(loss_actor)   
-        # loss_actor = loss_actor.astype('float')
-        # loss_actor = np.array([loss_actor])
-        # loss_th_actor = np_to_variable(loss_actor, requires_grad=True)
-
-        # self.optimizer_actor.zero_grad()
-        # loss_th_actor.backward()
-        # self.optimizer_actor.step()
-        
         #Critic
         loss_critic = np.mean(np.power(cum_R,2))
         loss_critic = loss_critic.astype('float')
@@ -215,7 +207,7 @@ def main(args):
     env = gym.make('LunarLander-v2')
 
     num_episodes = 10000
-    gamma =1
+    gamma = 0.95
     state_size = 8
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
@@ -223,6 +215,14 @@ def main(args):
     #Define actor and crtiic learning rates here
     actor_lr = 1e-3
     critic_lr = 1e-3
+
+    # Create plot
+    fig1 = plt.figure()
+    ax1 = fig1.gca()
+    ax1.set_title('Per episode Cum. Return Plot')
+    path_name = './fig_a2c'
+    # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
+    plot1_name = os.path.join(path_name,'a2c_reward.png')
 
     # TODO: Train the model using A2C and plot the learning curves.
 
@@ -239,10 +239,16 @@ def main(args):
     for i in range(num_episodes):
         cum_reward, loss_actor, loss_critic = a2cAgent.train(env,gamma)
         cum_reward *= 100
+        # Plot the discounted reward per episode
+        ax1.scatter(i, cum_reward)
+        plt.pause(0.005)
+        if i%100 == 0:
+            ax1.figure.savefig(plot1_name)
+            print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+            print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
+            print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
 
-        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
-        print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
-        print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
+
 
 
 
