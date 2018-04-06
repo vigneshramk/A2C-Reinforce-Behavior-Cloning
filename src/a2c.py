@@ -137,7 +137,7 @@ class A2C(Reinforce):
             R[t] = np.power(gamma,self.n)*V_end + np.dot(gamma_vec,r_n)
 
         #Cum rewards vector for each episode
-        cum_R = rewards - V_vec
+        cum_R = R - V_vec
 
         cum_R_th = torch.Tensor(cum_R)
 
@@ -154,16 +154,23 @@ class A2C(Reinforce):
         self.optimizer_actor.step()
 
         #Critic
-        loss_critic = np.mean(np.power(cum_R,2))
-        loss_critic = loss_critic.astype('float')
-        loss_critic = np.array([loss_critic])
-        loss_th_critic = np_to_variable(loss_critic, requires_grad=True)
+        # loss_critic = np.mean(np.power(cum_R,2))
+        # loss_critic = loss_critic.astype('float')
+        # loss_critic = np.array([loss_critic])
+        # loss_th_critic = np_to_variable(loss_critic, requires_grad=True)
+
+        R_th = np_to_variable(R,requires_grad=False)
+        V_vec_th = np_to_variable(V_vec,requires_grad=True)
+
+        loss_critic = nn.MSELoss()
+
+        loss_th_critic = loss_critic(V_vec_th,R_th)
 
         self.optimizer_critic.zero_grad()
         loss_th_critic.backward()
         self.optimizer_critic.step()
 
-        return np.sum(rewards), loss_actor, loss_critic
+        return np.sum(rewards), loss_actor, loss_th_critic.data[0]
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -213,8 +220,8 @@ def main(args):
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     #Define actor and crtiic learning rates here
-    actor_lr = 1e-3
-    critic_lr = 1e-3
+    actor_lr = 0.001
+    critic_lr = 0.001
 
     # Create plot
     fig1 = plt.figure()
