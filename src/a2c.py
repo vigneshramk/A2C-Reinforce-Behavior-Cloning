@@ -106,7 +106,9 @@ class A2C(Reinforce):
         self.optimizer_critic = optim.Adam(critic_model.parameters(), lr=critic_lr)
 
         print('Finished initializing')
-  
+
+    def entropy(self, p):
+        return -torch.sum(p * torch.log(p), 1)  
 
     def train(self, env, gamma=1.0):
         # Trains the model on a single episode using A2C.
@@ -151,11 +153,15 @@ class A2C(Reinforce):
 
         # Actor update
         hadamard_prod = []
+        # entropy_loss = []
         for l_prob, c_R in zip(log_probs, cum_R):
             hadamard_prod.append(-l_prob * c_R)
+            # entropy_loss.append(torch.mean(self.entropy(torch.exp(l_prob))))
 
+        # log_probs_th = torch.FloatTensor(log_probs)
+        # entropy_loss = torch.mean(self.entropy(torch.exp(log_probs_th)))
         self.optimizer_actor.zero_grad()
-        loss_actor = torch.cat(hadamard_prod).sum()
+        loss_actor = torch.mean(torch.cat(hadamard_prod))
         loss_actor.backward()
         self.optimizer_actor.step()
 
@@ -211,6 +217,11 @@ def main(args):
     # env = gym.make('LunarLander-v2')
     env = gym.make('CartPole-v0')
 
+    # Set the seeds
+    torch.manual_seed(2018)
+    np.random.seed(2018)
+    env.seed(2018)
+
     num_episodes = 10000
     gamma = 0.95
     print(env.observation_space.shape)
@@ -221,7 +232,7 @@ def main(args):
 
     #Define actor and crtiic learning rates here
     actor_lr = 0.001
-    critic_lr = 0.01
+    critic_lr = 0.001
 
     # Create plot
     fig1 = plt.figure()
