@@ -167,7 +167,7 @@ class A2C(Reinforce):
         loss_th_critic = loss_critic(V_vec_th,R_th)
 
         self.optimizer_critic.zero_grad()
-        loss_th_critic.backward()
+        (-loss_th_critic).backward()
         self.optimizer_critic.step()
 
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
