@@ -211,12 +211,15 @@ def main(args):
     render = args.render
 
     # Create the environment.
-    env = gym.make('LunarLander-v2')
+    # env = gym.make('LunarLander-v2')
+    env = gym.make('CartPole-v0')
 
     num_episodes = 10000
     gamma = 0.95
-    state_size = 8
-    action_size = 4
+    print(env.observation_space.shape)
+    print(env.action_space)
+    state_size = env.observation_space.shape[0]
+    action_size = env.action_space.n
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     #Define actor and crtiic learning rates here

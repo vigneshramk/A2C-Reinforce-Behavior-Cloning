@@ -127,7 +127,7 @@ class Reinforce(object):
         num_steps = 0
         while(done != True):
             num_steps += 1
-            s = np.reshape(s,[1,8])
+            s = np.reshape(s,[1,s.shape[0]])
             s_th = np_to_variable(s, requires_grad=False)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
