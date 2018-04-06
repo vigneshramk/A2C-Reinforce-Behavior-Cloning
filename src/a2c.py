@@ -222,6 +222,11 @@ def main(args):
     np.random.seed(2018)
     env.seed(2018)
 
+    # Set the seeds
+    torch.manual_seed(2018)
+    np.random.seed(2018)
+    env.seed(2018)
+
     num_episodes = 10000
     gamma = 0.95
     print(env.observation_space.shape)

@@ -97,6 +97,7 @@ class Reinforce(object):
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
+        # print(type(log_probs))
         hadamard_prod = []
         for log_prob, G_norm in zip(log_probs, G_normalized):
             hadamard_prod.append(-log_prob * G_norm)
@@ -127,7 +128,7 @@ class Reinforce(object):
         num_steps = 0
         while(done != True):
             num_steps += 1
-            s = np.reshape(s,[1,s.shape[0]])
+            s = np.reshape(s,[1,len(s)])
             s_th = np_to_variable(s, requires_grad=False)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
@@ -150,7 +151,7 @@ class Reinforce(object):
 
             s = nexts
 
-        print("Num steps:{}".format(num_steps))
+        #print("Num steps:{}".format(num_steps))
 
         return states, actions, rewards, log_probs
 
