@@ -66,10 +66,16 @@ class Value(nn.Module):
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(inplace=True),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, 1))
+        # self.classifier = nn.Sequential(
+        #                   nn.Linear(state_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, self.hidden_size),
+        #                   nn.ReLU(inplace=True),
+        #                   nn.Linear(self.hidden_size, 1))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -112,7 +118,6 @@ class A2C(Reinforce):
         states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)*1e-2
-        # log_probs = np.array(log_probs)
         
         T = len(rewards)
         R = np.zeros(T)
@@ -137,15 +142,16 @@ class A2C(Reinforce):
             R[t] = np.power(gamma,self.n)*V_end + np.dot(gamma_vec,r_n)
 
         #Cum rewards vector for each episode
+        R = np_to_variable(R, requires_grad=False)
+        V_vec = np_to_variable(V_vec, requires_grad=True)
         cum_R = R - V_vec
-
-        cum_R_th = torch.Tensor(cum_R)
 
         #Loss definition for the actor and critic networks
         #Actor
 
+        # Actor update
         hadamard_prod = []
-        for l_prob, c_R in zip(log_probs, cum_R_th):
+        for l_prob, c_R in zip(log_probs, cum_R):
             hadamard_prod.append(-l_prob * c_R)
 
         self.optimizer_actor.zero_grad()
@@ -153,18 +159,9 @@ class A2C(Reinforce):
         loss_actor.backward()
         self.optimizer_actor.step()
 
-        #Critic
-        # loss_critic = np.mean(np.power(cum_R,2))
-        # loss_critic = loss_critic.astype('float')
-        # loss_critic = np.array([loss_critic])
-        # loss_th_critic = np_to_variable(loss_critic, requires_grad=True)
-
-        R_th = np_to_variable(R,requires_grad=False)
-        V_vec_th = np_to_variable(V_vec,requires_grad=True)
-
+        # Critic update
         loss_critic = nn.MSELoss()
-
-        loss_th_critic = loss_critic(V_vec_th,R_th)
+        loss_th_critic = loss_critic(V_vec,R)
 
         self.optimizer_critic.zero_grad()
         (-loss_th_critic).backward()
@@ -224,7 +221,7 @@ def main(args):
 
     #Define actor and crtiic learning rates here
     actor_lr = 0.001
-    critic_lr = 0.001
+    critic_lr = 0.01
 
     # Create plot
     fig1 = plt.figure()
