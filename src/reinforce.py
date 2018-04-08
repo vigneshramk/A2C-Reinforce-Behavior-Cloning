@@ -128,7 +128,7 @@ class Reinforce(object):
         num_steps = 0
         while(done != True):
             num_steps += 1
-            s = np.reshape(s,[1,len(s)])
+            s = np.reshape(s,[1,len(s)])    x
             s_th = np_to_variable(s, requires_grad=False)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
@@ -178,6 +178,18 @@ def parse_arguments():
 
     return parser.parse_args()
 
+def test(self, env, num_episodes = 100,model_file=None):
+        
+        reward_epi = 0
+        for i in range(num_episodes):
+
+            states,actions,rewards,log_probs = self.generate_episode(env)
+            reward_epi.append(np.sum(rewards))
+
+        reward_epi = np.array(reward_epi)
+
+        return np.mean(reward_epi), np.std(reward_epi)
+
 
 def main(args):
     # Parse command-line arguments.
@@ -205,11 +217,11 @@ def main(args):
 
     fig2 = plt.figure()
     ax2 = fig2.gca()
-    ax2.set_title('Per episode Reward Plot')
+    ax2.set_title('Test Reward Plot')
 
     path_name = './fig'
-    plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
-    plot2_name = os.path.join(path_name,'reinforce_reward.png')
+    plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
+    plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
 
     # Create plot dir
     if not os.path.exists(path_name):
@@ -234,10 +246,13 @@ def main(args):
         print("Rewards for episode %s is %1.2f" %(i,cum_reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
 
+        #Test every 200 episodes
+        if i % 200 == 0:
+            mean_r, std_r = reinforce.test(env)
+            ax2.errorbar(i, mean_r, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
-        ax1.scatter(i, cum_reward)
-        ax2.scatter(i, reward)
+        ax1.scatter(i, cum_reward)                
         if i%200 == 0:
             ax1.figure.savefig(plot1_name)
             ax2.figure.savefig(plot2_name)
