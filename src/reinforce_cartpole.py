@@ -155,6 +155,18 @@ class Reinforce(object):
 
         return states, actions, rewards, log_probs
 
+    def test(self, env, num_episodes = 100,model_file=None):
+        
+        reward_epi = []
+        for i in range(num_episodes):
+
+            states,actions,rewards,log_probs = self.generate_episode(env)
+            reward_epi.append(np.sum(rewards))
+
+        reward_epi = np.array(reward_epi)
+
+        return np.mean(reward_epi), np.std(reward_epi)
+
 def parse_arguments():
     # Command-line flags are defined here.
     parser = argparse.ArgumentParser()
@@ -188,7 +200,7 @@ def main(args):
     render = args.render
 
     # Create the environment.
-    env = gym.make('LunarLander-v2')
+    env = gym.make('CartPole-v0')
 
     # Set the seeds
     torch.manual_seed(2018)
@@ -205,19 +217,19 @@ def main(args):
 
     fig2 = plt.figure()
     ax2 = fig2.gca()
-    ax2.set_title('Per episode Reward Plot')
+    ax2.set_title('Test Reward Plot')
 
     path_name = './fig'
-    plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
-    plot2_name = os.path.join(path_name,'reinforce_reward.png')
+    plot1_name = os.path.join(path_name,'Cartpole_reinforce_training_reward.png')
+    plot2_name = os.path.join(path_name,'Cartpole_reinforce_test_reward.png')
 
     # Create plot dir
     if not os.path.exists(path_name):
         os.makedirs(path_name)
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
-    state_size = 8
-    action_size = 4
+    state_size = env.observation_space.shape[0]
+    action_size = 2
     print("State_size:{}, Action_size{}".format(state_size, action_size))
     policy = Policy(state_size, action_size)
     # weights_normal_init(policy, dev=0.01)
@@ -234,10 +246,13 @@ def main(args):
         print("Rewards for episode %s is %1.2f" %(i,cum_reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
 
+        #Test every 200 episodes
+        if i % 200 == 0:
+            mean_r, std_r = reinforce.test(env)
+            ax2.errorbar(i, mean_r, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
-        ax1.scatter(i, cum_reward)
-        ax2.scatter(i, reward)
+        ax1.scatter(i, cum_reward)                
         if i%200 == 0:
             ax1.figure.savefig(plot1_name)
             ax2.figure.savefig(plot2_name)
