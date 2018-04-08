@@ -128,7 +128,7 @@ class Reinforce(object):
         num_steps = 0
         while(done != True):
             num_steps += 1
-            s = np.reshape(s,[1,len(s)])    x
+            s = np.reshape(s,[1,len(s)])
             s_th = np_to_variable(s, requires_grad=False)
             action_probs = self.model(s_th)
             action_softmax = Categorical(action_probs)
@@ -155,6 +155,18 @@ class Reinforce(object):
 
         return states, actions, rewards, log_probs
 
+    def test(self, env, num_episodes = 100,model_file=None):
+        
+        reward_epi = []
+        for i in range(num_episodes):
+
+            states,actions,rewards,log_probs = self.generate_episode(env)
+            reward_epi.append(np.sum(rewards))
+
+        reward_epi = np.array(reward_epi)
+
+        return np.mean(reward_epi), np.std(reward_epi)
+
 def parse_arguments():
     # Command-line flags are defined here.
     parser = argparse.ArgumentParser()
@@ -178,17 +190,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def test(self, env, num_episodes = 100,model_file=None):
-        
-        reward_epi = 0
-        for i in range(num_episodes):
 
-            states,actions,rewards,log_probs = self.generate_episode(env)
-            reward_epi.append(np.sum(rewards))
-
-        reward_epi = np.array(reward_epi)
-
-        return np.mean(reward_epi), np.std(reward_epi)
 
 
 def main(args):
