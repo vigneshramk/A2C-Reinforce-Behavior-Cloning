@@ -243,11 +243,11 @@ def main(args):
         reward *= 100
         cum_reward *= 100
 
-        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+        print("Rewards for episode %s is %1.2f" %(i,reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
 
         #Test every 200 episodes
-        if i % 200 == 0:
+        if i % 100 == 0:
             mean_r, std_r = reinforce.test(env)
             ax2.errorbar(i, mean_r, yerr=std_r, fmt='o')
 
