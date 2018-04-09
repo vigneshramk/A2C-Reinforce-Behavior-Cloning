@@ -238,12 +238,12 @@ def main(args):
     policy.cuda()
     policy.train()
 
-    reinforce = Reinforce(policy,lr=0.001)
+    reinforce = Reinforce(policy,lr=0.0005)
 
     for i in range(num_episodes):
         disc_reward, loss, reward = reinforce.train(env,gamma)
         reward *= 100
-        cum_reward *= 100
+        disc_reward *= 100
 
         print("Discounted Reward for episode %s is %1.2f" %(i,disc_reward))
         print("Total Reward for episode %s is %1.2f" %(i,reward))
