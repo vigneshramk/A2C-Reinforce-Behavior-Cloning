@@ -41,7 +41,6 @@ class Policy(nn.Module):
         super(Policy, self).__init__()
         self.hidden_size = 16
         self.grad_clip_range = grad_clip_range
-
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
         #                   nn.Tanh(),
@@ -54,10 +53,10 @@ class Policy(nn.Module):
                           nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
-                          # nn.Linear(self.hidden_size, self.hidden_size),
-                          # nn.Tanh(),
+                          #nn.Linear(self.hidden_size, self.hidden_size),
+                          #nn.ReLU(),
+                          #nn.Linear(self.hidden_size, self.hidden_size),
+                          #nn.ReLU(),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -221,7 +220,7 @@ def main(args):
     # Create plot
     fig1 = plt.figure()
     ax1 = fig1.gca()
-    ax1.set_title('Per episode Cum. Return Plot')
+    ax1.set_title('Per episode Return Plot')
 
     fig2 = plt.figure()
     ax2 = fig2.gca()
