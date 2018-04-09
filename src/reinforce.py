@@ -37,21 +37,23 @@ class Policy(nn.Module):
         super(Policy, self).__init__()
         self.hidden_size = 16
 
+        # self.classifier = nn.Sequential(
+        #                   nn.Linear(state_size, self.hidden_size),
+        #                   nn.Tanh(),
+        #                   nn.Linear(self.hidden_size, self.hidden_size*2),
+        #                   nn.Tanh(),
+        #                   nn.Linear(self.hidden_size*2, action_size))
+
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
-
-        # self.classifier = nn.Sequential(
-        #                   nn.Linear(state_size, self.hidden_size),
-        #                   nn.ReLU(inplace=True),
-        #                   nn.Linear(self.hidden_size, self.hidden_size),
-        #                   nn.ReLU(inplace=True),
-        #                   nn.Linear(self.hidden_size, self.hidden_size),
-        #                   nn.ReLU(inplace=True),
-        #                   nn.Linear(self.hidden_size, action_size))
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          # nn.Linear(self.hidden_size, self.hidden_size),
+                          # nn.Tanh(),
+                          nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -71,7 +73,7 @@ class Reinforce(object):
 
         print('Finished initializing')
           
-    def train(self, env, gamma=1.0):
+    def train(self, env, gamma=0.99):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
@@ -93,14 +95,14 @@ class Reinforce(object):
             G[t] = np.sum(rewards[t-T:]*gamma_vec)
 
         G_normalized = torch.Tensor(G)
-        G_normalized = (G_normalized - G_normalized.mean()) / (G_normalized.std() + np.finfo(np.float32).eps)
+        # G_normalized = (G_normalized - G_normalized.mean()) / (G_normalized.std() + np.finfo(np.float32).eps)
 
         #Define the loss and do model.fit here
         # print("Probs:{}, Actions:{}".format())
         # print(type(log_probs))
         hadamard_prod = []
         for log_prob, G_norm in zip(log_probs, G_normalized):
-            hadamard_prod.append(-log_prob * G_norm)
+            hadamard_prod.append(-log_prob * G_norm/T)
 
         self.optimizer.zero_grad()
         loss = torch.cat(hadamard_prod).sum()
@@ -191,8 +193,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-
-
 def main(args):
     # Parse command-line arguments.
     args = parse_arguments()
@@ -209,7 +209,7 @@ def main(args):
     np.random.seed(2018)
     env.seed(2018)
 
-    num_episodes = 10000
+    num_episodes = 50000
     gamma = 0.99
 
     # Create plot
@@ -221,7 +221,7 @@ def main(args):
     ax2 = fig2.gca()
     ax2.set_title('Test Reward Plot')
 
-    path_name = './fig'
+    path_name = './fig_tanh3l'
     plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
     plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
 
@@ -238,26 +238,31 @@ def main(args):
     policy.cuda()
     policy.train()
 
-    reinforce = Reinforce(policy,lr=0.0005)
+
+    reinforce = Reinforce(policy,lr=5e-5)
 
     for i in range(num_episodes):
         disc_reward, loss, reward = reinforce.train(env,gamma)
         reward *= 100
         disc_reward *= 100
 
-        print("Discounted Reward for episode %s is %1.2f" %(i,disc_reward))
-        print("Total Reward for episode %s is %1.2f" %(i,reward))
-        print("Loss for episode %s is %1.2f" %(i,loss))
 
-        #Test every 200 episodes
-        if i % 200 == 0:
+        print("Rewards for episode %s is %1.2f" %(i,reward))
+        # print("Loss for episode %s is %1.2f" %(i,loss))
+        #Test every 300 episodes
+        if i % 300 == 0:
             mean_r, std_r = reinforce.test(env)
-            ax2.errorbar(i, mean_r, yerr=std_r, fmt='o')
-            ax2.figure.savefig(plot2_name)
+
+            print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
+            ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
         ax1.scatter(i, reward)                
-        if i%200 == 0:
+        if i%400 == 0:
+            str_path1 = 'reinforce_training_reward_tanh3l' + str(i) + '.png'
+            str_path2 = 'reinforce_test_reward_tanh3l' + str(i) + '.png'
+            plot1_name = os.path.join(path_name,str_path1)
+            plot2_name = os.path.join(path_name,str_path2)
             ax1.figure.savefig(plot1_name)
 
 if __name__ == '__main__':
