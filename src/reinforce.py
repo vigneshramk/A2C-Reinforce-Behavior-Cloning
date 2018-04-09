@@ -241,23 +241,24 @@ def main(args):
     reinforce = Reinforce(policy,lr=0.001)
 
     for i in range(num_episodes):
-        cum_reward, loss, reward = reinforce.train(env,gamma)
+        disc_reward, loss, reward = reinforce.train(env,gamma)
         reward *= 100
         cum_reward *= 100
 
-        print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+        print("Discounted Reward for episode %s is %1.2f" %(i,disc_reward))
+        print("Total Reward for episode %s is %1.2f" %(i,reward))
         print("Loss for episode %s is %1.2f" %(i,loss))
 
         #Test every 200 episodes
         if i % 200 == 0:
             mean_r, std_r = reinforce.test(env)
             ax2.errorbar(i, mean_r, yerr=std_r, fmt='o')
+            ax2.figure.savefig(plot2_name)
 
         # Plot the discounted reward per episode
-        ax1.scatter(i, cum_reward)                
+        ax1.scatter(i, reward)                
         if i%200 == 0:
             ax1.figure.savefig(plot1_name)
-            ax2.figure.savefig(plot2_name)
 
 if __name__ == '__main__':
     main(sys.argv)
