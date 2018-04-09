@@ -32,10 +32,15 @@ def weights_normal_init(model, dev=0.01):
             elif isinstance(m, nn.Linear):
                 m.weight.data.normal_(0.0, dev)
 
+def clip_grad(v, min, max):
+    v.register_hook(lambda g: g.clamp(min, max))
+    return v
+
 class Policy(nn.Module):
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size,grad_clip_range):
         super(Policy, self).__init__()
         self.hidden_size = 16
+        self.grad_clip_range = grad_clip_range
 
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -57,6 +62,7 @@ class Policy(nn.Module):
 
     def forward(self, x):
         x = self.classifier(x)
+        x = clip_grad(x, -self.grad_clip_range, self.grad_clip_range)
         return F.softmax(x, dim=1)
 
 class Reinforce(object):
@@ -102,10 +108,10 @@ class Reinforce(object):
         # print(type(log_probs))
         hadamard_prod = []
         for log_prob, G_norm in zip(log_probs, G_normalized):
-            hadamard_prod.append(-log_prob * G_norm/T)
+            hadamard_prod.append(-log_prob * G_norm)
 
         self.optimizer.zero_grad()
-        loss = torch.cat(hadamard_prod).sum()
+        loss = torch.cat(hadamard_prod).mean()
         loss.backward()
         self.optimizer.step()   
 
@@ -221,7 +227,7 @@ def main(args):
     ax2 = fig2.gca()
     ax2.set_title('Test Reward Plot')
 
-    path_name = './fig_tanh3l'
+    path_name = './fig_test'
     plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
     plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
 
@@ -233,13 +239,13 @@ def main(args):
     state_size = 8
     action_size = 4
     print("State_size:{}, Action_size{}".format(state_size, action_size))
-    policy = Policy(state_size, action_size)
+    policy = Policy(state_size, action_size,1)
     # weights_normal_init(policy, dev=0.01)
     policy.cuda()
     policy.train()
 
 
-    reinforce = Reinforce(policy,lr=5e-5)
+    reinforce = Reinforce(policy,lr=5e-3)
 
     for i in range(num_episodes):
         disc_reward, loss, reward = reinforce.train(env,gamma)
@@ -259,8 +265,8 @@ def main(args):
         # Plot the discounted reward per episode
         ax1.scatter(i, reward)                
         if i%400 == 0:
-            str_path1 = 'reinforce_training_reward_tanh3l' + str(i) + '.png'
-            str_path2 = 'reinforce_test_reward_tanh3l' + str(i) + '.png'
+            str_path1 = 'reinforce_training_reward' + str(i) + '.png'
+            str_path2 = 'reinforce_test_reward' + str(i) + '.png'
             plot1_name = os.path.join(path_name,str_path1)
             plot2_name = os.path.join(path_name,str_path2)
             ax1.figure.savefig(plot1_name)
