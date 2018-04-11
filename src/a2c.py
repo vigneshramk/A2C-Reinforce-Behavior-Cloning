@@ -46,6 +46,8 @@ class Policy(nn.Module):
                           nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
+			  nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
@@ -65,14 +67,14 @@ class Policy(nn.Module):
 class Value(nn.Module):
     def __init__(self, state_size, action_size):
         super(Value, self).__init__()
-        self.hidden_size = 32
+        self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, 1))
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -114,7 +116,7 @@ class A2C(Reinforce):
     def entropy(self, p):
         return -torch.sum(p * torch.log(p), 1)  
 
-    def train(self, env, gamma=1.0):
+    def train(self, env, gamma=0.99):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
@@ -245,7 +247,7 @@ def main(args):
     np.random.seed(2018)
     env.seed(2018)
 
-    num_episodes = 10000
+    num_episodes = 50000
     gamma = 0.99
     print(env.observation_space.shape)
     print(env.action_space)
@@ -261,7 +263,7 @@ def main(args):
     # fig1 = plt.figure()
     # ax1 = fig1.gca()
     # ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2c_tanh_test'
+    path_name = './fig_a2c_pt4_at3_l5e-4_n50'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
