@@ -112,6 +112,7 @@ class Reinforce(object):
         self.optimizer.zero_grad()
         loss = torch.cat(hadamard_prod).mean()
         loss.backward()
+        nn.utils.clip_grad_norm(self.model.parameters(), 0.5)
         self.optimizer.step()   
 
         return G[0], loss, np.sum(rewards)
@@ -269,6 +270,7 @@ def main(args):
             plot1_name = os.path.join(path_name,str_path1)
             plot2_name = os.path.join(path_name,str_path2)
             ax1.figure.savefig(plot1_name)
+            ax2.figure.savefig(plot2_name)
 
 if __name__ == '__main__':
     main(sys.argv)

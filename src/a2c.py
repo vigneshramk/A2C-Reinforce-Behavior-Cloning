@@ -42,9 +42,11 @@ class Policy(nn.Module):
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -63,12 +65,14 @@ class Policy(nn.Module):
 class Value(nn.Module):
     def __init__(self, state_size, action_size):
         super(Value, self).__init__()
-        self.hidden_size = 16
+        self.hidden_size = 32
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, 1))
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -163,6 +167,7 @@ class A2C(Reinforce):
         self.optimizer_actor.zero_grad()
         loss_actor = torch.mean(torch.cat(hadamard_prod))
         loss_actor.backward()
+        nn.utils.clip_grad_norm(self.model.parameters(), 1)
         self.optimizer_actor.step()
 
         # Critic update
@@ -171,9 +176,22 @@ class A2C(Reinforce):
 
         self.optimizer_critic.zero_grad()
         (-loss_th_critic).backward()
+        nn.utils.clip_grad_norm(self.critic_model.parameters(), 1)
         self.optimizer_critic.step()
 
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
+
+    def test(self, env, num_episodes = 100,model_file=None):
+        
+        reward_epi = []
+        for i in range(num_episodes):
+
+            states,actions,rewards,log_probs = self.generate_episode(env)
+            reward_epi.append(np.sum(rewards))
+
+        reward_epi = np.array(reward_epi)
+
+        return np.mean(reward_epi), np.std(reward_epi)
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -188,7 +206,7 @@ def parse_arguments():
     parser.add_argument('--critic-lr', dest='critic_lr', type=float,
                         default=1e-4, help="The critic's learning rate.")
     parser.add_argument('--n', dest='n', type=int,
-                        default=20, help="The value of N in N-step A2C.")
+                        default=50, help="The value of N in N-step A2C.")
 
     # https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     parser_group = parser.add_mutually_exclusive_group(required=False)
@@ -215,7 +233,7 @@ def main(args):
 
     # Create the environment.
     # env = gym.make('LunarLander-v2')
-    env = gym.make('CartPole-v0')
+    env = gym.make('LunarLander-v2')
 
     # Set the seeds
     torch.manual_seed(2018)
@@ -228,7 +246,7 @@ def main(args):
     env.seed(2018)
 
     num_episodes = 10000
-    gamma = 0.95
+    gamma = 0.99
     print(env.observation_space.shape)
     print(env.action_space)
     state_size = env.observation_space.shape[0]
@@ -236,16 +254,27 @@ def main(args):
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     #Define actor and crtiic learning rates here
-    actor_lr = 0.001
-    critic_lr = 0.001
+    actor_lr = 5e-4
+    critic_lr = 5e-4
+
+    # # Create plot
+    # fig1 = plt.figure()
+    # ax1 = fig1.gca()
+    # ax1.set_title('Per episode Cum. Return Plot')
+    path_name = './fig_a2c_tanh_test'
+    if not os.path.exists(path_name):
+        os.makedirs(path_name)
+    # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
+    # plot1_name = os.path.join(path_name,'a2c_reward.png')
 
     # Create plot
     fig1 = plt.figure()
     ax1 = fig1.gca()
     ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2c'
-    # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
-    plot1_name = os.path.join(path_name,'a2c_reward.png')
+
+    fig2 = plt.figure()
+    ax2 = fig2.gca()
+    ax2.set_title('Test Reward Plot')
 
     # TODO: Train the model using A2C and plot the learning curves.
 
@@ -262,18 +291,28 @@ def main(args):
     for i in range(num_episodes):
         cum_reward, loss_actor, loss_critic = a2cAgent.train(env,gamma)
         cum_reward *= 100
+        # plt.pause(0.005)
+        if i%100 == 0:
+            print("Rewards for episode %s is %1.2f" %(i,cum_reward))
+            # print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
+            # print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
+
+        #Test every 300 episodes
+        if i % 300 == 0:
+            mean_r, std_r = a2cAgent.test(env)
+
+            print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
+            ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
+
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
-        plt.pause(0.005)
-        if i%100 == 0:
+        if i%400 == 0:
+            str_path1 = 'a2c_training_reward' + str(i) + '.png'
+            str_path2 = 'a2c_test_reward' + str(i) + '.png'
+            plot1_name = os.path.join(path_name,str_path1)
+            plot2_name = os.path.join(path_name,str_path2)
             ax1.figure.savefig(plot1_name)
-            print("Rewards for episode %s is %1.2f" %(i,cum_reward))
-            print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
-            print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
-
-
-
-
+            ax2.figure.savefig(plot2_name)
 
 if __name__ == '__main__':
     main(sys.argv)
