@@ -53,10 +53,10 @@ class Policy(nn.Module):
                           nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          #nn.Linear(self.hidden_size, self.hidden_size),
-                          #nn.ReLU(),
-                          #nn.Linear(self.hidden_size, self.hidden_size),
-                          #nn.ReLU(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -225,13 +225,13 @@ def main(args):
 
     fig2 = plt.figure()
     ax2 = fig2.gca()
-    ax2.set_title('Test Reward Plot')
 
     fig3 = plt.figure()
     ax3 = fig3.gca()
     ax3.set_title('Test Reward Plot')
 
     path_name = './fig_final_r3l_lr5e-4'
+
     plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
     plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
     plot3_name = os.path.join(path_name,'reinforce_testfinal_reward.png')
@@ -278,8 +278,12 @@ def main(args):
             plot2_name = os.path.join(path_name,str_path2)
             plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
+<<<<<<< 79fff2507e76b491dd9fa99b2677e66a7f544b9a
             ax2.figure.savefig(plot2_name)
             ax3.figure.savefig(plot3_name)
+=======
+            ax2.figure.savefig(plot2_name)	
+>>>>>>> Previous version
 
 if __name__ == '__main__':
     main(sys.argv)
