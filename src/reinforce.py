@@ -50,13 +50,11 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -278,12 +276,9 @@ def main(args):
             plot2_name = os.path.join(path_name,str_path2)
             plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
-<<<<<<< 79fff2507e76b491dd9fa99b2677e66a7f544b9a
             ax2.figure.savefig(plot2_name)
             ax3.figure.savefig(plot3_name)
-=======
-            ax2.figure.savefig(plot2_name)	
->>>>>>> Previous version
+            
 
 if __name__ == '__main__':
     main(sys.argv)
