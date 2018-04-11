@@ -227,9 +227,14 @@ def main(args):
     ax2 = fig2.gca()
     ax2.set_title('Test Reward Plot')
 
-    path_name = './fig_test'
+    fig3 = plt.figure()
+    ax3 = fig3.gca()
+    ax3.set_title('Test Reward Plot')
+
+    path_name = './fig_final_r3l_lr5e-4'
     plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
     plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
+    plot3_name = os.path.join(path_name,'reinforce_testfinal_reward.png')
 
     # Create plot dir
     if not os.path.exists(path_name):
@@ -245,7 +250,7 @@ def main(args):
     policy.train()
 
 
-    reinforce = Reinforce(policy,lr=5e-3)
+    reinforce = Reinforce(policy,lr=5e-4)
 
     for i in range(num_episodes):
         disc_reward, loss, reward = reinforce.train(env,gamma)
@@ -256,21 +261,25 @@ def main(args):
         print("Rewards for episode %s is %1.2f" %(i,reward))
         # print("Loss for episode %s is %1.2f" %(i,loss))
         #Test every 300 episodes
-        if i % 300 == 0:
+        if i % 500 == 0:
             mean_r, std_r = reinforce.test(env)
 
             print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
             ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
+            ax3.errorbar(i+1, mean_r + 20, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
         ax1.scatter(i, reward)                
-        if i%400 == 0:
+        if i%1000 == 0:
             str_path1 = 'reinforce_training_reward' + str(i) + '.png'
             str_path2 = 'reinforce_test_reward' + str(i) + '.png'
+            str_path3 = 'reinforce_testfinal_reward' + str(i) + '.png'
             plot1_name = os.path.join(path_name,str_path1)
             plot2_name = os.path.join(path_name,str_path2)
+            plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
             ax2.figure.savefig(plot2_name)
+            ax3.figure.savefig(plot3_name)
 
 if __name__ == '__main__':
     main(sys.argv)
