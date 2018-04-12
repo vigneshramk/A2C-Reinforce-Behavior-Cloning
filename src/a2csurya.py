@@ -230,9 +230,9 @@ def main(args):
     env = gym.make('LunarLander-v2')
 
     # Set the seeds
-    # torch.manual_seed(2018)
-    # np.random.seed(2018)
-    # env.seed(2018)
+    torch.manual_seed(2018)
+    np.random.seed(2018)
+    env.seed(2018)
 
     num_episodes = 50000
     gamma = 0.99
