@@ -50,11 +50,11 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
+                          nn.Tanh(),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -228,7 +228,7 @@ def main(args):
     ax3 = fig3.gca()
     ax3.set_title('Test Reward Plot')
 
-    path_name = './fig_final_r3l_lr5e-4'
+    path_name = './fig_final_t3l_lr5e-4'
 
     plot1_name = os.path.join(path_name,'reinforce_training_reward.png')
     plot2_name = os.path.join(path_name,'reinforce_test_reward.png')
@@ -267,7 +267,7 @@ def main(args):
             ax3.errorbar(i+1, mean_r + 20, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
-        ax1.scatter(i, reward)                
+        #ax1.scatter(i, reward)                
         if i%1000 == 0:
             str_path1 = 'reinforce_training_reward' + str(i) + '.png'
             str_path2 = 'reinforce_test_reward' + str(i) + '.png'
