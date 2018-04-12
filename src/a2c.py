@@ -41,13 +41,13 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
-			  nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
+			  #nn.Linear(self.hidden_size, self.hidden_size),
+                          #nn.Tanh(),
                           nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
@@ -70,11 +70,11 @@ class Value(nn.Module):
         self.hidden_size = 16
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, 1))
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -177,7 +177,7 @@ class A2C(Reinforce):
         loss_th_critic = loss_critic(V_vec,R)
 
         self.optimizer_critic.zero_grad()
-        (-loss_th_critic).backward()
+        loss_th_critic.backward()
         nn.utils.clip_grad_norm(self.critic_model.parameters(), 1)
         self.optimizer_critic.step()
 
@@ -263,7 +263,7 @@ def main(args):
     # fig1 = plt.figure()
     # ax1 = fig1.gca()
     # ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2c_pt4_at3_l5e-4_n50'
+    path_name = './fig_a2c_pr3_ar3_n100'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
