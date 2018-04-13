@@ -42,9 +42,14 @@ class Policy(nn.Module):
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, action_size)
+                          nn.Tanh())
 
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
@@ -63,7 +68,7 @@ class Policy(nn.Module):
 class Value(nn.Module):
     def __init__(self, state_size, action_size):
         super(Value, self).__init__()
-        self.hidden_size = 16
+        self.hidden_size = 64
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
         #                   nn.Tanh(),
@@ -73,7 +78,9 @@ class Value(nn.Module):
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.ReLU(inplace=True),
-                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Linear(self.hidden_size, 4*self.hidden_size),
+                          nn.ReLU(inplace=True),
+                          nn.Linear(4*self.hidden_size, self.hidden_size),
                           nn.ReLU(inplace=True),
                           nn.Linear(self.hidden_size, 1))
 
@@ -163,6 +170,7 @@ class A2C(Reinforce):
         self.optimizer_actor.zero_grad()
         loss_actor = torch.mean(torch.cat(hadamard_prod))
         loss_actor.backward()
+        nn.utils.clip_grad_norm(self.model.parameters(), 0.5)
         self.optimizer_actor.step()
 
         # Critic update
@@ -171,7 +179,7 @@ class A2C(Reinforce):
 
         self.optimizer_critic.zero_grad()
         (loss_th_critic).backward()
-        nn.utils.clip_grad_norm(self.critic_model.parameters(), 3)
+        nn.utils.clip_grad_norm(self.critic_model.parameters(), 0.5)
         self.optimizer_critic.step()
 
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
@@ -243,14 +251,16 @@ def main(args):
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     #Define actor and crtiic learning rates here
-    actor_lr = 0.001
-    critic_lr = 0.001
+    actor_lr = 5e-4
+    critic_lr = 5e-4
 
     # Create plot
     fig1 = plt.figure()
     ax1 = fig1.gca()
     ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2csurya_n100'
+    path_name = './fig_a2cfinal_n100'
+    if not os.path.exists(path_name):
+        os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
     plot1_name = os.path.join(path_name,'a2c_reward.png')
 
@@ -286,7 +296,7 @@ def main(args):
 
             print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
             ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
-            ax3.errorbar(i+1, mean_r+25, yerr=std_r, fmt='o')
+            ax3.errorbar(i+1, mean_r+20, yerr=std_r, fmt='o')
 
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
