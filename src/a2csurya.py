@@ -17,6 +17,9 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+# Selecting the gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
     v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
     if is_cuda:
@@ -41,15 +44,14 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size, action_size)
-                          nn.Tanh())
+                          nn.ReLU(),
+                          nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
         #                   nn.Linear(state_size, self.hidden_size),
