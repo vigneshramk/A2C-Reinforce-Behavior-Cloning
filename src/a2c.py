@@ -49,7 +49,7 @@ class Policy(nn.Module):
                           nn.Tanh(),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-			  nn.Linear(self.hidden_size, self.hidden_size),
+              nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
                           nn.Linear(self.hidden_size, action_size))
 
@@ -289,19 +289,19 @@ def main(args):
 
             print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
             ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
-	    ax3.errorbar(i+1, mean_r+20, yerr=std_r, fmt='o')	
+            ax3.errorbar(i+1, mean_r+20, yerr=std_r, fmt='o')   
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
         if i%100 == 0:
             str_path1 = 'a2c_training_reward' + str(i) + '.png'
             str_path2 = 'a2c_test_reward' + str(i) + '.png'
-	    str_path3 = 'a2c_testfinal_reward' + str(i) + '.png'
+            str_path3 = 'a2c_testfinal_reward' + str(i) + '.png'
             plot1_name = os.path.join(path_name,str_path1)
             plot2_name = os.path.join(path_name,str_path2)
-	    plot3_name = os.path.join(path_name,str_path3)
+            plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
             ax2.figure.savefig(plot2_name)
-	    ax3.figure.savefig(plot3_name)
+            ax3.figure.savefig(plot3_name)
 
 if __name__ == '__main__':
     main(sys.argv)
