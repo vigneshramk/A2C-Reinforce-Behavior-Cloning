@@ -49,8 +49,6 @@ class Policy(nn.Module):
                           nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-			  nn.ReLU(),
                           nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
@@ -233,7 +231,7 @@ def main(args):
     num_episodes = args.num_episodes
     lr = args.lr
     critic_lr = args.critic_lr
-    n = 20 # args.n
+    n = 100 # args.n
     render = args.render
 
     # Create the environment.
