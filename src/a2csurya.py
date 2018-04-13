@@ -231,7 +231,7 @@ def main(args):
     num_episodes = args.num_episodes
     lr = args.lr
     critic_lr = args.critic_lr
-    n = 100 # args.n
+    n = 20 # args.n
     render = args.render
 
     # Create the environment.
