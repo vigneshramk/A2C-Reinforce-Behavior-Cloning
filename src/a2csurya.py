@@ -18,7 +18,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 # Selecting the gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="5"
 
 def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
     v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
@@ -231,7 +231,7 @@ def main(args):
     num_episodes = args.num_episodes
     lr = args.lr
     critic_lr = args.critic_lr
-    n = 100 # args.n
+    n = 20 # args.n
     render = args.render
 
     # Create the environment.
@@ -258,7 +258,7 @@ def main(args):
     fig1 = plt.figure()
     ax1 = fig1.gca()
     ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2cfinal_n100'
+    path_name = './fig_a2cfinal_n20'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
