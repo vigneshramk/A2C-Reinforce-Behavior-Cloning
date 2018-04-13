@@ -81,7 +81,7 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
 
-        states,actions,rewards, log_probs = self.generate_episode(env)
+        states,actions,rewards, log_probs = self.generate_episode(self.model, env)
 
         states = np.array(states)
         actions = np.array(actions)
@@ -115,7 +115,7 @@ class Reinforce(object):
 
         return G[0], loss, np.sum(rewards)
 
-    def generate_episode(self, env, render=False):
+    def generate_episode(self, model, env, render=False):
         # Generates an episode by executing the current policy in the given env.
         # Returns:
         # - a list of states, indexed by time step
@@ -136,7 +136,7 @@ class Reinforce(object):
             num_steps += 1
             s = np.reshape(s,[1,len(s)])
             s_th = np_to_variable(s, requires_grad=False)
-            action_probs = self.model(s_th)
+            action_probs = model(s_th)
             action_softmax = Categorical(action_probs)
 
             #Sample action according to the softmax distribution
