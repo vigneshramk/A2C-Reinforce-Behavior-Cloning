@@ -50,7 +50,7 @@ class Policy(nn.Module):
                           nn.Linear(self.hidden_size, self.hidden_size),
                           nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
+			  nn.ReLU(),
                           nn.Linear(self.hidden_size, action_size))
 
         # self.classifier = nn.Sequential(
