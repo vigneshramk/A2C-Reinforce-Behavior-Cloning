@@ -18,6 +18,10 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+# Selecting the gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
+
+
 def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
     v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
     if is_cuda:
@@ -43,9 +47,11 @@ class Policy(nn.Module):
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Linear(self.hidden_size, self.hidden_size),
                           nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
+			  nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
@@ -151,14 +157,14 @@ class A2C(Reinforce):
         self.optimizer_actor.zero_grad()
         loss_actor = torch.mean(torch.cat(hadamard_prod))
         loss_actor.backward()
-        nn.utils.clip_grad_norm(self.actor_model.parameters(), 2)
+        nn.utils.clip_grad_norm(self.actor_model.parameters(), 1)
         self.optimizer_actor.step()
 
         # Critic update
         self.optimizer_critic.zero_grad()
         loss_th_critic = self.loss_critic(V_vec_th_critic,R)
         loss_th_critic.backward()
-        nn.utils.clip_grad_norm(self.critic_model.parameters(), 2)
+        nn.utils.clip_grad_norm(self.critic_model.parameters(), 1)
         self.optimizer_critic.step()
 
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
@@ -188,7 +194,7 @@ def parse_arguments():
     parser.add_argument('--critic-lr', dest='critic_lr', type=float,
                         default=1e-4, help="The critic's learning rate.")
     parser.add_argument('--n', dest='n', type=int,
-                        default=50, help="The value of N in N-step A2C.")
+                        default=100, help="The value of N in N-step A2C.")
 
     # https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     parser_group = parser.add_mutually_exclusive_group(required=False)
@@ -237,7 +243,7 @@ def main(args):
     # fig1 = plt.figure()
     # ax1 = fig1.gca()
     # ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2c_pr3_ar3_n100'
+    path_name = './fig_a2cfixed_n100'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
@@ -251,6 +257,10 @@ def main(args):
     fig2 = plt.figure()
     ax2 = fig2.gca()
     ax2.set_title('Test Reward Plot')
+   
+    fig3 = plt.figure()
+    ax3 = fig3.gca()
+    ax3.set_title('Test Reward Plot')
 
     # TODO: Train the model using A2C and plot the learning curves.
 
@@ -279,16 +289,19 @@ def main(args):
 
             print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
             ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
-
+	    ax3.errorbar(i+1, mean_r+20, yerr=std_r, fmt='o')	
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
         if i%100 == 0:
             str_path1 = 'a2c_training_reward' + str(i) + '.png'
             str_path2 = 'a2c_test_reward' + str(i) + '.png'
+	    str_path3 = 'a2c_testfinal_reward' + str(i) + '.png'
             plot1_name = os.path.join(path_name,str_path1)
             plot2_name = os.path.join(path_name,str_path2)
+	    plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
             ax2.figure.savefig(plot2_name)
+	    ax3.figure.savefig(plot3_name)
 
 if __name__ == '__main__':
     main(sys.argv)
