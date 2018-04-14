@@ -19,7 +19,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 # Selecting the gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="3"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
 
 def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
@@ -46,11 +46,13 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
-              nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.Tanh(),
+                          nn.ReLU(),
+              		  nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(),
+			  nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(),
                           nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
@@ -157,14 +159,14 @@ class A2C(Reinforce):
         self.optimizer_actor.zero_grad()
         loss_actor = torch.mean(torch.cat(hadamard_prod))
         loss_actor.backward()
-        nn.utils.clip_grad_norm(self.actor_model.parameters(), 1)
+        nn.utils.clip_grad_norm(self.actor_model.parameters(), 0.5)
         self.optimizer_actor.step()
 
         # Critic update
         self.optimizer_critic.zero_grad()
         loss_th_critic = self.loss_critic(V_vec_th_critic,R)
         loss_th_critic.backward()
-        nn.utils.clip_grad_norm(self.critic_model.parameters(), 1)
+        nn.utils.clip_grad_norm(self.critic_model.parameters(), 0.5)
         self.optimizer_critic.step()
 
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
@@ -243,7 +245,7 @@ def main(args):
     # fig1 = plt.figure()
     # ax1 = fig1.gca()
     # ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2cfixed_n100'
+    path_name = './fig_a2cfixed_n20_v2'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
