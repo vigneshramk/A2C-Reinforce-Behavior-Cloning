@@ -5,6 +5,8 @@ import gym
 import os
 from copy import copy, deepcopy
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -38,6 +40,11 @@ def weights_normal_init(model, dev=0.01):
                 m.weight.data.normal_(0.0, dev)
             elif isinstance(m, nn.Linear):
                 m.weight.data.normal_(0.0, dev)
+
+def change_lr(optimizer):
+    lr = 5e-5
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
 
 class Policy(nn.Module):
     def __init__(self, state_size, action_size):
@@ -103,6 +110,7 @@ class A2C(Reinforce):
         self.optimizer_critic = optim.Adam(self.critic_model.parameters(), lr=critic_lr)
         self.loss_critic = nn.MSELoss()
 
+        self.change_lr = 0
 
         print('Finished initializing') 
 
@@ -238,14 +246,14 @@ def main(args):
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
     #Define actor and crtiic learning rates here
-    actor_lr = 5e-4
-    critic_lr = 5e-4
+    actor_lr = 1e-3
+    critic_lr = 1e-2
 
     # # Create plot
     # fig1 = plt.figure()
     # ax1 = fig1.gca()
     # ax1.set_title('Per episode Cum. Return Plot')
-    path_name = './fig_a2cfixed_n20_v2'
+    path_name = './fig_a2c_n' + str(n) + '_'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
     # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
@@ -279,6 +287,12 @@ def main(args):
     for i in range(num_episodes):
         cum_reward, loss_actor, loss_critic = a2cAgent.train(env,gamma)
         cum_reward *= 100
+
+        if cum_reward > 190 and a2cAgent.change_lr == 0:
+            a2cAgent.change_lr = 1
+            change_lr(a2cAgent.optimizer_actor)
+            change_lr(a2cAgent.optimizer_critic)
+
         # plt.pause(0.005)
         if i%100 == 0:
             print("Rewards for episode %s is %1.2f" %(i,cum_reward))
