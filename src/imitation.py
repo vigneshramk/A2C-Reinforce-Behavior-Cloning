@@ -8,7 +8,6 @@ import gym
 from keras import metrics
 import tensorflow as tf
 from tensorflow import set_random_seed
-from logger import Logger
 from keras.optimizers import Adam
 
 from keras.utils.np_utils import to_categorical
@@ -35,7 +34,6 @@ class Imitation():
 
         # Setting the batch size
         self.batch_size = 32
-        self.logger = Logger('./tmp/Imitation', 'Imitation_Learning')
 
         print('Finished initializing')
 
@@ -162,9 +160,6 @@ class Imitation():
                        verbose=1)
 
         # Get the loss and accuracy from history
-        # self.logger.scalar_summary()
-        # print history.history.keys()
-        # print(history.history['acc'][49])
         acc = history.history['acc'][49]
 
         return loss, acc

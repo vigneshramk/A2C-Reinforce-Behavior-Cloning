@@ -20,16 +20,15 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-# Selecting the gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
 
-
+# Helper function to convert numpy array to pytorch Variable
 def np_to_variable(x, requires_grad=False, is_cuda=True, dtype=torch.FloatTensor):
     v = Variable(torch.from_numpy(x).type(dtype), requires_grad=requires_grad)
     if is_cuda:
         v = v.cuda()
     return v
 
+# Helper function to initialize network weights
 def weights_normal_init(model, dev=0.01):
     if isinstance(model, list):
         for m in model:
@@ -41,11 +40,13 @@ def weights_normal_init(model, dev=0.01):
             elif isinstance(m, nn.Linear):
                 m.weight.data.normal_(0.0, dev)
 
-def change_lr(optimizer):
-    lr = 5e-5
+# Helper function to change lr
+def change_lr(optimizer, target_lr=5e-5):
+    lr = target_lr
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
+# Actor network
 class Policy(nn.Module):
     def __init__(self, state_size, action_size):
         super(Policy, self).__init__()
@@ -53,20 +54,16 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.ReLU(),
-                          nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
-              		  nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
-			  nn.Linear(self.hidden_size, self.hidden_size),
-                          nn.ReLU(),
-                          nn.Linear(self.hidden_size, action_size))
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size, self.hidden_size*2),
+                          nn.Tanh(),
+                          nn.Linear(self.hidden_size*2, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
         return F.softmax(x, dim=1)
 
-
+# Critic network
 class Value(nn.Module):
     def __init__(self, state_size, action_size):
         super(Value, self).__init__()
@@ -101,7 +98,7 @@ class A2C(Reinforce):
         # - n: The value of N in N-step A2C.
         self.actor_model = deepcopy(actor_model)
         self.critic_model = deepcopy(critic_model)
-        self.n = n
+        self.n = n # Rollout factor
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.
@@ -180,10 +177,9 @@ class A2C(Reinforce):
         return np.sum(rewards), loss_actor, loss_th_critic.data[0]
 
     def test(self, env, num_episodes = 100,model_file=None):
-        
         reward_epi = []
-        for i in range(num_episodes):
 
+        for i in range(num_episodes):
             states,actions,rewards,log_probs = self.generate_episode(self.actor_model, env)
             reward_epi.append(np.sum(rewards))
 
@@ -194,12 +190,9 @@ class A2C(Reinforce):
 def parse_arguments():
     # Command-line flags are defined here.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-config-path', dest='model_config_path',
-                        type=str, default='LunarLander-v2-config.json',
-                        help="Path to the actor model config file.")
     parser.add_argument('--num-episodes', dest='num_episodes', type=int,
                         default=50000, help="Number of episodes to train on.")
-    parser.add_argument('--lr', dest='lr', type=float,
+    parser.add_argument('--actor-lr', dest='actor_lr', type=float,
                         default=5e-4, help="The actor's learning rate.")
     parser.add_argument('--critic-lr', dest='critic_lr', type=float,
                         default=1e-4, help="The critic's learning rate.")
@@ -222,55 +215,38 @@ def parse_arguments():
 def main(args):
     # Parse command-line arguments.
     args = parse_arguments()
-    model_config_path = args.model_config_path
     num_episodes = args.num_episodes
-    lr = args.lr
+    actor_lr = args.actor_lr
     critic_lr = args.critic_lr
     n = args.n
     render = args.render
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
+    # env = gym.make('CartPole-v0')
 
     # Set the seeds
     torch.manual_seed(2018)
     np.random.seed(2018)
     env.seed(2018)
 
-    num_episodes = 50000
     gamma = 0.99
-    print(env.observation_space.shape)
-    print(env.action_space)
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     print("State_size:{}, Action_size{}".format(state_size, action_size))
 
-    #Define actor and crtiic learning rates here
-    actor_lr = 1e-3
-    critic_lr = 1e-2
-
-    # # Create plot
-    # fig1 = plt.figure()
-    # ax1 = fig1.gca()
-    # ax1.set_title('Per episode Cum. Return Plot')
     path_name = './fig_a2c_n' + str(n) + '_'
     if not os.path.exists(path_name):
         os.makedirs(path_name)
-    # plot1_name = os.path.join(path_name,'reinforce_discounted_reward.png')
-    # plot1_name = os.path.join(path_name,'a2c_reward.png')
 
     # Create plot
     fig1 = plt.figure()
     ax1 = fig1.gca()
-    ax1.set_title('Per episode Cum. Return Plot')
+    ax1.set_title('Per episode total reward plot')
 
     fig2 = plt.figure()
     ax2 = fig2.gca()
     ax2.set_title('Test Reward Plot')
-   
-    fig3 = plt.figure()
-    ax3 = fig3.gca()
-    ax3.set_title('Test Reward Plot')
 
     # TODO: Train the model using A2C and plot the learning curves.
 
@@ -282,42 +258,31 @@ def main(args):
     actor.cuda()
     actor.train()
 
-    a2cAgent = A2C(actor, actor_lr,critic, critic_lr, n)
+    a2cAgent = A2C(actor, actor_lr, critic, critic_lr, n)
 
     for i in range(num_episodes):
         cum_reward, loss_actor, loss_critic = a2cAgent.train(env,gamma)
         cum_reward *= 100
 
-        if cum_reward > 190 and a2cAgent.change_lr == 0:
-            a2cAgent.change_lr = 1
-            change_lr(a2cAgent.optimizer_actor)
-            change_lr(a2cAgent.optimizer_critic)
-
-        # plt.pause(0.005)
-        if i%100 == 0:
-            print("Rewards for episode %s is %1.2f" %(i,cum_reward))
-            # print("Loss Actor for episode %s is %1.2f" %(i,loss_actor))
-            # print("Loss Critic for episode %s is %1.2f" %(i,loss_critic))
-
-        #Test every 300 episodes
+        #Test every 1000 episodes
         if i % 1000 == 0:
+            actor.eval()
             mean_r, std_r = a2cAgent.test(env)
-
+            actor.train()
             print('Episode %s - Mean - %1.2f  Std - %1.2f' %(i,mean_r,std_r))
+
+            str_path2 = 'a2c_test_reward' + str(i) + '.png'
+            plot2_name = os.path.join(path_name, str_path2)
             ax2.errorbar(i+1, mean_r, yerr=std_r, fmt='o')
-            ax3.errorbar(i+1, mean_r+20, yerr=std_r, fmt='o')   
+            ax2.figure.savefig(plot2_name)
+        
         # Plot the discounted reward per episode
         ax1.scatter(i, cum_reward)
         if i%100 == 0:
+            print("Rewards for episode %s is %1.2f" %(i,cum_reward))
             str_path1 = 'a2c_training_reward' + str(i) + '.png'
-            str_path2 = 'a2c_test_reward' + str(i) + '.png'
-            str_path3 = 'a2c_testfinal_reward' + str(i) + '.png'
             plot1_name = os.path.join(path_name,str_path1)
-            plot2_name = os.path.join(path_name,str_path2)
-            plot3_name = os.path.join(path_name,str_path3)
             ax1.figure.savefig(plot1_name)
-            ax2.figure.savefig(plot2_name)
-            ax3.figure.savefig(plot3_name)
 
 if __name__ == '__main__':
     main(sys.argv)
