@@ -54,10 +54,12 @@ class Policy(nn.Module):
 
         self.classifier = nn.Sequential(
                           nn.Linear(state_size, self.hidden_size),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size, self.hidden_size*2),
-                          nn.Tanh(),
-                          nn.Linear(self.hidden_size*2, action_size))
+                          nn.ReLU(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(),
+                          nn.Linear(self.hidden_size, self.hidden_size),
+                          nn.ReLU(),
+                          nn.Linear(self.hidden_size, action_size))
 
     def forward(self, x):
         x = self.classifier(x)
